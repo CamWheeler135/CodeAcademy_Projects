@@ -1,4 +1,4 @@
-# Classification of Diseases through CDR3$\beta$ repertoires using a CNN 💻
+# Classification of Diseases using CDR3β repertoires 💻
 
 ## TLDR ⚠️
 
