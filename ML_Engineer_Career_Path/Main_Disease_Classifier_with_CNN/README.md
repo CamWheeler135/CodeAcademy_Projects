@@ -1,4 +1,8 @@
-# Classification of Diseases through CDR3$\beta$ repertoires using a CNN. 
+# Classification of Diseases through CDR3$\beta$ repertoires using a CNN 💻
+
+## TLDR ⚠️
+
+Being able to accurately diagnose cancer is crucial for appropriate and effective treatment. Current methods used in cancer diagnosis look at imaging, biopsies and lab tests. In the age of next generation sequencing (NGS) we can quickly and cost effectively sequence cells producing HUGE amounts of data that we can analyze using machine learning methods. Our adaptive immune system is what allows us to combat disease that our innate immune system would not recognize 🦠, a key part of this is the T cell. This project aims to use a deep learning model (CNN) to see if we can classify human patients with certain diseases (primarily different types cancers) based on their repertoire data. Being able to do such a task could lead to another tool in the clinicians arsenal when it comes to diagnosing patients. 
 
 ## Jump Right In ⤵️
 
@@ -9,21 +13,20 @@
 - [Methods](#methods)
 - [References](#references)
 
-
-## Introduction
+## Introduction 🔎
 This is where the intro will go.
 
-### Aims
+### Aims 🎯
 This is where the aims will go.
 
-### Data
+### Data 📂
 This is where the data will go. 
 
-## Findings
+## Findings 🔬
 This is where our findings will go. 
 
-## Methods
+## Methods 🧪
 This is where our methods will go.
 
-## References
+## References 📚
 This is where our references. 
