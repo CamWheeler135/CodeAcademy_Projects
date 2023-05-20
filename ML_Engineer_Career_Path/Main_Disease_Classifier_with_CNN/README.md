@@ -8,23 +8,23 @@ Being able to accurately diagnose cancer is crucial for appropriate and effectiv
 
 ## Jump Right In ⤵️
 
-- [Introduction](#introduction-🔎)
-    - [Aims](#aims-🎯)
-    - [Data](#data-📂)
-- [Findings](#findings-🔬)
-- [Methods](#methods-🧪)
-- [Papers and Interesting Articles](#papers-and-interesting-articles-📚)
+- [Introduction](#introduction)
+    - [Aims](#aims)
+    - [Data](#data)
+- [Findings](#findings)
+- [Methods](#methods)
+- [Papers and Interesting Articles](#papers-and-interesting-d)
 
-## Introduction 🔎
+## Introduction
 This is supposed to be a rather informal project, if you are looking for some formal papers on the subject, I have linked plenty in [this section](#papers-and-interesting-articles-📚). 
 
-### Aims 🎯
+### Aims
 My aims for this project are:
 - Further investigate immune data and its usefulness in building clinical machine learning models.
 - Increase my understanding of end to end project building. 
 - Learn PyTorch fundamentals. 
 
-### Data 📂
+### Data
 The data being used in the project is coming from the TCR data base [(TCRdb)](http://bioinfo.life.hust.edu.cn/TCRdb/#/browse). In this project we are focusing on classifying different types of solid tumours.
 
 - Esophageal
@@ -40,11 +40,11 @@ The data being used in the project is coming from the TCR data base [(TCRdb)](ht
 
 It is worth noting that there is some class imbalance here, some cancers contain a larger number of repertoires than others so we will have to deal with this in the preprocessing stage to ensure that our model is effective. 
 
-## Findings 🔬
+## Findings
 This is where our findings will go. 
 
-## Methods 🧪
+## Methods
 This is where our methods will go.
 
-## Papers and Interesting Articles 📚
+## Papers and Interesting Articles
 This is where our references. 
