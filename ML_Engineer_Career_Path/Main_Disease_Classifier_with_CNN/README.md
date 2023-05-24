@@ -25,9 +25,9 @@ Being able to accurately diagnose cancer is crucial for appropriate and effectiv
 #### *More than the TLDR.* 🔎
 
 #### Cancer Introduction. 
-    - What is it?
-    - How do we detect it?
-    - How do we treat it?
+- What is it?
+- How do we detect it?
+- How do we treat it?
 
 #### Introduction into the immune system. 
 
@@ -35,9 +35,9 @@ As we go about our daily lives, our bodies are constantly coming into contact wi
 
 This is where our *immune system* comes in. There are two main systems you need to understand, the *innate* system and the *adaptive* system. The innate immune system contains all the physical and chemical barriers like our skin, mucosa tract and digestive system. These take the approach of, "If it can't get in, it can't hurt us", its rather blunt, yet still effective. There also exists cell mediated innate immunity which include cells like phagocytes that engulf and digest invaders, presenting the remains on their cell surface (the fact they can do this is REALLY important so remember this for later). The problem is that these innate immune cells cannot recognize all the invaders that enter our bodies. Our *adaptive* immune system covers this; it is able to specifically target a particular immunogen that is causing the problem, while in the processes *remember* what that immunogen looked like, just in case it comes back later (this 'memory' mechanism is what immunologists aim to exploit with vaccines). The adaptive immune system is made by of T lymphocytes and B lymphocytes, but we are going to focus on the T lymphocyte (T cell). A T cell can have several types of jobs depending on its variant, it can either go out and fight the infection, help recruit other immune cells to the fight or memorize the immunogen for later. 
 
-Now that we are familiar with the role of the adaptive immune system and the T cell, we need to talk about how to T cell recognizes these invaders. Each T cell has its own T cell receptor (TCR), the majority of TCRs in humans consist of $\alpha$ and $\beta$ subunits. On the $\beta$ subunit exists a specific sequence called the Complementary-Determining-Region-3-Beta (CDR3$\beta$), this sequence is what is hypothesized by immunologists to control what the T cell can bind to. If a TCR is thought to bind to a particular immunogen, it is said to have a high *affinity* to that particular sequence. When T cells are being developed, the TCR CDR3$\beta$ sequence is formed through V(D)J recombination. This is a complex process that takes the T cell DNA and chops it up in random places, this process (along with some errors that are usually made when stitching the sequence back together) is though to produce over $10^{15}$ possible CDR3$\beta$ sequences, that's 1,000,000,000,000,000 possible sequences❗️ The fact that we can do this, allows us to defend ourselves so well against so many pathogens that we come across in our daily activities. 
+Now that we are familiar with the role of the adaptive immune system and the T cell, we need to talk about how to T cell recognizes these invaders. Each T cell has its own T cell receptor (TCR), the majority of TCRs in humans consist of $\alpha$ and $\beta$ subunits. On the $\beta$ subunit exists a specific sequence called the Complementary-Determining-Region-3-Beta (CDR3β), this sequence is what is hypothesized by immunologists to control what the T cell can bind to. If a TCR is thought to bind to a particular immunogen, it is said to have a high *affinity* to that particular sequence. When T cells are being developed, the TCR CDR3$\beta$ sequence is formed through V(D)J recombination. This is a complex process that takes the T cell DNA and chops it up in random places, this process (along with some errors that are usually made when stitching the sequence back together) is though to produce over $10^{15}$ possible CDR3$\beta$ sequences, that's 1,000,000,000,000,000 possible sequences❗️ The fact that we can do this, allows us to defend ourselves so well against so many pathogens that we come across in our daily activities. 
 
-#### Linking Cancer and CDR3$\beta$ Sequence
+#### Linking Cancer and CDR3β Sequence
 
 - Introduction into the machine learning. 
     - What are we using?
@@ -59,12 +59,9 @@ Now that we are familiar with the role of the adaptive immune system and the T c
 ## Data
 #### *What data is being used in the project?* 📂
 
-- What is the data
-- Where has the data come from (biologically)
+The data being used in the project is coming from the TCR data base [(TCRdb)](http://bioinfo.life.hust.edu.cn/TCRdb/#/browse). It is build of TCR CDR3β sequences taken from a several solid tumour cancers and blood cancers in humans. This data also comes along with V, D, and J region information that we are going to use in the exploratory data analysis. Importantly, the database has already done a lot of the cleaning for us, but I have build a data cleaning module anyway just in case. It will also be useful when trying to classify samples that have not come from the database as we can handle and process them properly. These samples are taken from a range of experiments, patients and cell sources, furthermore, the times in which these samples were taken also differ. Although this might not seem ideal as there doesn't appear to be much homogeny in the data collection methods. THIS IS GREAT! Medical data is never perfect, we can never get samples at the same time, from patients who are the same age, with the same disease progress, from the same source. Having a model that can perform well with diverse data has a much better chance in the clinic than one that is really sensitive to such issues. 
 
-- Talk about biological and technical replicates replicates.
-
-The data being used in the project is coming from the TCR data base [(TCRdb)](http://bioinfo.life.hust.edu.cn/TCRdb/#/browse).
+The cancers that are included in version 1 of the project are:
 
 - Esophageal
 - Breast
