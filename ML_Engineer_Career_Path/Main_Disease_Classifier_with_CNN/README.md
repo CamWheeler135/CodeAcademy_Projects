@@ -1,10 +1,12 @@
-# Can we use Your Immune Cell Data to Predict if you Have a Disease?
+# Can we use Your Immune Data to Predict Cancer?
 
 ### ❗️Project Currently Being Built❗️
 
+In this project, I aim to use immune cell data in order to predict the variant of cancer a patient has. I am going to be quite informal throughout the project and assume little to no previous knowledge in either medical biology or machine learning on behalf of the reader. Any technical topics will be explained so anybody can pick up this README and understand what I am doing, how I am doing it and why! If after reading this you want to delve deeper into the subject, I have linked plenty of papers in [this section](#papers-and-interesting-articles). 
+
 ## TLDR ⚠️
 
-Being able to accurately diagnose cancer is crucial for appropriate and effective treatment. Current methods used in cancer diagnosis look at imaging, biopsies and lab tests. In the age of next generation sequencing (NGS) we can quickly and cost effectively sequence cells producing HUGE amounts of data that we can analyze using machine learning methods. Our adaptive immune system is what allows us to combat disease that our innate immune system would not recognize 🦠, a key part of this is the T cell. This project aims to use a deep learning model (CNN) to see if we can discriminate the specific cancer (solid tumour) a patient has presented with based on their repertoire data. Being able to do such a task could lead to another tool in the clinicians arsenal when it comes to diagnosing patients. 
+Being able to accurately diagnose cancer is crucial for appropriate and effective treatment. Current methods used in cancer diagnosis look at imaging, biopsies and lab tests. In the age of next generation sequencing (NGS) we can quickly and cost effectively sequence cells producing HUGE amounts of data that we can analyze using machine learning methods. Our adaptive immune system is what allows us to combat disease that our innate immune system would not recognize 🦠, a key part of this is the T cell. This project aims to use a deep learning model (CNN) to see if we can classify the specific cancer a patient has presented with based on their repertoire data. Being able to do such a task could lead to another tool in the clinicians arsenal when it comes to diagnosing patients. 
 
 ## Jump Right In ⤵️
 
@@ -15,16 +17,18 @@ Being able to accurately diagnose cancer is crucial for appropriate and effectiv
 - [Methods](#methods)
 - [Papers and Interesting Articles](#papers-and-interesting-articles)
 
-
 ## Introduction
 #### *More than the TLDR.* 🔎
-This is supposed to be a rather informal project, if you are looking for some formal papers on the subject, I have linked plenty in [this section](#papers-and-interesting-articles). 
+
 
 ## Aims
 #### *What are my aims for the project?* 🎯
+- Understand the workings of cancer diagnosis and the pros and cons of current methods. 
 - Further investigate immune data and its usefulness in building clinical machine learning models.
+    - Increase my ability to visualize and communicate findings with regards to medical data and machine learning. 
 - Increase my understanding of end to end project building. 
 - Learn PyTorch fundamentals. 
+- Learn to communicate the technical methods and knowledge properly to individuals outside of the field.
 
 ## Data
 #### *What data is being used in the project?* 📂
