@@ -20,3 +20,6 @@ console_logger.setLevel(logging.INFO)
 console_format = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
 console_logger.setFormatter(console_format)
 logging.getLogger('').addHandler(console_logger)
+
+# Matplot lib creates a lot of logs, this code removes that. 
+logging.getLogger("matplotlib").setLevel(logging.WARNING)

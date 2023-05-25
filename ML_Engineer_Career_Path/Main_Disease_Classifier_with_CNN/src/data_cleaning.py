@@ -21,13 +21,13 @@ class DataCleaner():
     '''
 
     # Class variables.
-    logger = logging.getLogger('Data Cleaner')
     number_of_data_files = 0
     supported_disease_types = ['colorectal', 'hematological_cancer', 'breast',
                     'lymphoblastic_leukemia', 'myeloid_leukemia', 'liver',
-                    'lung', 'glioblastoma', 'gastric', 'esophageal']
+                    'lung', 'glioblastoma', 'esophageal']
     
     def __init__(self, input_path=Path('data/raw_files'), output_path=Path('data/cleaned_files')):
+        self.logger = logging.getLogger('Data Cleaner')
         self.input_path = input_path
         self.output_path = output_path
         self.min_seq_size = 10
@@ -42,12 +42,12 @@ class DataCleaner():
     def collect_general_info(self):
         ''' Outputs general dataset information. '''
         if self.number_of_data_files == 0:
-            self.logger.warning(f"There are currently no DataCleaner objects or the DataCleaner has not been called to clean any data.")
-            self.logger.info(f'The diseases that are currently accepted in the pipeline are {DataCleaner.supported_disease_types}')
+            print(f"\nThere are currently no DataCleaner objects or the DataCleaner has not been called to clean any data.")
+            print(f'The diseases that are currently accepted in the pipeline are {DataCleaner.supported_disease_types}')
         else:
-            self.logger.info("[green]General Information about the dataset.[/]")
-            self.logger.info(f'The number of files that have been cleaned are {DataCleaner.number_of_data_files}')
-            self.logger.info(f'The diseases that are currently accepted in the pipeline are {DataCleaner.supported_disease_types}')
+            print("\nGeneral Information about the dataset.")
+            print(f'The number of files that have been cleaned are {DataCleaner.number_of_data_files}')
+            print(f'The diseases that are currently accepted in the pipeline are {DataCleaner.supported_disease_types}')
 
     def collect_data(self) -> dict:
         ''' 

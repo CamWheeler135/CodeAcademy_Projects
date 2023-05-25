@@ -65,7 +65,6 @@ The cancers that are included in version 1 of the project are:
 
 - Esophageal
 - Breast
-- Gastric
 - Liver
 - Lung 
 - Glioblastoma 
