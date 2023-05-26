@@ -41,7 +41,7 @@ class ExploratoryAnalyzer(DataLoader):
         super().__init__(collection_path)
         self.logger = logging.getLogger("EDA Analyzer")
         self.sequence_counts = {}
-        self.sequence_length = {}
+        self.seq_len_info = {}
     
     def __str__(self):
         return "Exploratory Data Analysis Object."
@@ -49,21 +49,36 @@ class ExploratoryAnalyzer(DataLoader):
     # Collect the number of sequences we have for each disease.
     def count_sequences_per_disease(self, data:dict) -> dict:
         ''' Counts the number of sequences present in each repertoire. '''
+
         self.logger.info("Counting the number of sequences in each repertoire.")
         for repertoire in data:
             self.sequence_counts[repertoire] = len(data[repertoire].index)
+
+    def increment_variance(self, variance:int):
+        ''' Helper function used in 'count_sequence_length_metrics'. '''
+        incremental_var = None
+        return incremental_var
         
+    def count_sequence_length_mertics(self, data:dict) -> dict:
+        ''' Computes metrics regarding the length of sequences in the repertoires.'''
 
-    # Collect the size of each sequence in the repertoire. 
-    # def count_sequence_length_mertics(self, data:dict) -> dict:
-    #     ''' Computes metrics regarding the length of sequences in the repertoires.'''
+        self.logger.info("Computing the sequence length metrics.")
 
-    #     self.logger.info("Computing the sequence length metrics.")
-    #     for repertoire in data:
-    #         lengths = data[repertoire].str.len()
-    #         self.sequence_length[repertoire] = {'len_counts': lengths.value_counts(),
-    #                                             'mean': np.mean(lengths),
-    #                                             'std_dev': np.std(lengths)}
+        # Variables for computing database mean length and standard deviation.
+        '''TODO'''
+
+        for repertoire in data:
+            lengths = data[repertoire]['AASeq'].str.len()
+            mean = np.mean(lengths)
+            stand_dev = np.std(lengths)
+            # Add the data to the dictionary. 
+            self.seq_len_info[repertoire] = {'len_counts': lengths.value_counts() / len(data[repertoire].index) * 100,
+                                                'mean': mean,
+                                                'stand_dev': stand_dev}
+            # Add values to compute the mean. 
+            # total_lens += np.sum(lengths)
+            # total_seq_num += len(data[repertoire].index)
+            self.logger.debug(self.seq_len_info[repertoire])
 
     
     # Collect Jaccard Index of each disease. 
@@ -141,7 +156,20 @@ class Plotter():
 
     def plot_sequence_len_distribution(self):
         '''Plots the sequence length distribution of each repertoire.'''
-        pass
+        
+        fig = plt.figure(figsize=(10, 10))
+        for repertoire in self.eda.seq_len_info.keys():
+            sns.lineplot(x=self.eda.seq_len_info[repertoire]['len_counts'].index, y=self.eda.seq_len_info[repertoire]['len_counts'])
+        plt.title("Proportional Sequence Length")
+        plt.ylabel("Proportion of Repertoire")
+        plt.xlabel("Length of Sequence")
+        plt.legend(list(self.eda.seq_len_info.keys()))
+        plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
+        self.logger.info("Sequence length distribution chart saved.")
+
+
+        # We are getting a dictionary of each repertoire, we want to access the value counts. 
+        # We then plot the value counts in a plot.
 
     # Plot the Jacquard Index (Heatmap).
 
