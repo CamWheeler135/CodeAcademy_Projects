@@ -65,22 +65,31 @@ class ExploratoryAnalyzer(DataLoader):
         self.logger.info("Computing the sequence length metrics.")
 
         # Variables for computing database mean length and standard deviation.
-        '''TODO'''
+        total_seq_lens = 0
+        total_num_of_seqs = 0
+        repertoire_seq_lens = []
 
+        # Computing the sequence lengths for each repertoire.
         for repertoire in data:
             lengths = data[repertoire]['AASeq'].str.len()
-            mean = np.mean(lengths)
-            stand_dev = np.std(lengths)
-            # Add the data to the dictionary. 
-            self.seq_len_info[repertoire] = {'len_counts': lengths.value_counts() / len(data[repertoire].index) * 100,
-                                                'mean': mean,
-                                                'stand_dev': stand_dev}
-            # Add values to compute the mean. 
-            # total_lens += np.sum(lengths)
-            # total_seq_num += len(data[repertoire].index)
+            repertoire_seq_lens.append(list(lengths)) 
+            self.seq_len_info[repertoire] = {'len_counts': lengths.value_counts() / len(data[repertoire].index) * 100}
+            total_seq_lens += np.sum(lengths)
+            total_num_of_seqs += self.sequence_counts[repertoire]
             self.logger.debug(self.seq_len_info[repertoire])
 
-    
+        # Computing the mean.
+        self.logger.debug(f"The total length of sequences in the database are {total_seq_lens}")
+        self.logger.debug(f"The overall number of sequences in the database are {total_num_of_seqs}")
+        mean = total_seq_lens / total_num_of_seqs
+        self.seq_len_info['mean_len'] = mean
+
+        # Computing the standard deviation. 
+        len_array = np.hstack(repertoire_seq_lens)
+        standard_dev = np.sqrt((np.sum((len_array - mean) ** 2)) / total_num_of_seqs)
+        self.seq_len_info['standard_dev'] = standard_dev
+        self.logger.debug(f"The standard deviation is {standard_dev}")
+
     # Collect Jaccard Index of each disease. 
 
     # Collect the gene usage of each disease. 
@@ -156,14 +165,22 @@ class Plotter():
 
     def plot_sequence_len_distribution(self):
         '''Plots the sequence length distribution of each repertoire.'''
-        
+
+        mean = self.eda.seq_len_info['mean_len']
+        standard_dev = self.eda.seq_len_info['standard_dev']
+        del self.eda.seq_len_info['mean_len']
+        del self.eda.seq_len_info['standard_dev']
+
         fig = plt.figure(figsize=(10, 10))
         for repertoire in self.eda.seq_len_info.keys():
-            sns.lineplot(x=self.eda.seq_len_info[repertoire]['len_counts'].index, y=self.eda.seq_len_info[repertoire]['len_counts'])
+            sns.lineplot(x=self.eda.seq_len_info[repertoire]['len_counts'].index, y=self.eda.seq_len_info[repertoire]['len_counts'], label=str(repertoire))
+        plt.axvline(mean , color='k', ls='--', lw=2)
+        plt.axvline(mean - standard_dev, color='k', ls='--', lw=1)
+        plt.axvline(mean + standard_dev, color='k', ls='--', lw=1)
         plt.title("Proportional Sequence Length")
         plt.ylabel("Proportion of Repertoire")
         plt.xlabel("Length of Sequence")
-        plt.legend(list(self.eda.seq_len_info.keys()))
+        plt.legend()
         plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
         self.logger.info("Sequence length distribution chart saved.")
 
