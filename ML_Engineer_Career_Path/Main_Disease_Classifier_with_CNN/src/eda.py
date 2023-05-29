@@ -42,7 +42,8 @@ class ExploratoryAnalyzer(DataLoader):
         self.logger = logging.getLogger("EDA Analyzer")
         self.sequence_counts = {}
         self.seq_len_info = {}
-    
+        self.gene_usage = {}
+
     def __str__(self):
         return "Exploratory Data Analysis Object."
     
@@ -53,11 +54,6 @@ class ExploratoryAnalyzer(DataLoader):
         self.logger.info("Counting the number of sequences in each repertoire.")
         for repertoire in data:
             self.sequence_counts[repertoire] = len(data[repertoire].index)
-
-    def increment_variance(self, variance:int):
-        ''' Helper function used in 'count_sequence_length_metrics'. '''
-        incremental_var = None
-        return incremental_var
         
     def count_sequence_length_mertics(self, data:dict) -> dict:
         ''' Computes metrics regarding the length of sequences in the repertoires.'''
@@ -90,7 +86,22 @@ class ExploratoryAnalyzer(DataLoader):
         self.seq_len_info['standard_dev'] = standard_dev
         self.logger.debug(f"The standard deviation is {standard_dev}")
 
-    # Collect Jaccard Index of each disease. 
+    def count_gene_usage(self, data:dict):
+        ''' Counts each permutation of gene present in V, D and J region. '''
+
+        gene_regions = ['Vregion', 'Jregion' ,'Dregion']
+
+        # For each repertoire, count the number of permutations in each gene region. 
+        for gene in gene_regions:
+            self.gene_usage[gene] = {repertoire: data[repertoire][gene].value_counts(normalize=True) for repertoire in data}
+            self.logger.debug(f" The usage counts for {gene} are {self.gene_usage[gene]}")
+
+        '''TODO'''
+        # Comparing the number of unknowns in the repertoire. 
+
+    
+    '''TODO'''
+    # Collect Jaccard Index of each disease.
 
     # Collect the gene usage of each disease. 
         # Again we want a proportion here, what proportion sequences in a repertoire use this gene. 
@@ -166,11 +177,13 @@ class Plotter():
     def plot_sequence_len_distribution(self):
         '''Plots the sequence length distribution of each repertoire.'''
 
+        # Data.
         mean = self.eda.seq_len_info['mean_len']
         standard_dev = self.eda.seq_len_info['standard_dev']
         del self.eda.seq_len_info['mean_len']
         del self.eda.seq_len_info['standard_dev']
 
+        # Plot.
         fig = plt.figure(figsize=(10, 10))
         for repertoire in self.eda.seq_len_info.keys():
             sns.lineplot(x=self.eda.seq_len_info[repertoire]['len_counts'].index, y=self.eda.seq_len_info[repertoire]['len_counts'], label=str(repertoire))
@@ -185,12 +198,33 @@ class Plotter():
         self.logger.info("Sequence length distribution chart saved.")
 
 
-        # We are getting a dictionary of each repertoire, we want to access the value counts. 
-        # We then plot the value counts in a plot.
+    def plot_gene_usage(self):
+        ''' Plots a heatmap of the gene permutations in each disease for V, D and J region '''
+
+        # There are only 3 regions in analysis so hard coding the number of graphs should be okay. 
+        # Collect the data for each of the heatmaps.
+        vgene_df = pd.DataFrame(self.eda.gene_usage['Vregion']).dropna(axis=0, how='all').fillna(0).transpose()
+        dgene_df = pd.DataFrame(self.eda.gene_usage['Dregion']).fillna(0).transpose()
+        jgene_df = pd.DataFrame(self.eda.gene_usage['Jregion']).fillna(0).transpose()
+        self.logger.debug(vgene_df)
+        self.logger.debug(dgene_df)
+        self.logger.debug(jgene_df)
+        
+        # Plots
+        fig, ax = plt.subplots(3, 1, figsize=(30, 25), constrained_layout=True)
+        ax[0] = sns.heatmap(vgene_df, ax=ax[0])
+        ax[0].set_title("Percentage V Gene Usage Between Diseases.")
+        ax[1] = sns.heatmap(dgene_df, ax=ax[1])
+        ax[1].set_title("Percentage D Gene Usage Between Diseases.")
+        ax[2] = sns.heatmap(jgene_df, ax=ax[2])
+        ax[2].set_title("Percentage J Gene Usage Between Diseases.")
+        plt.xticks(fontsize=8, rotation=90)
+        plt.yticks(fontsize=15)
+        plt.savefig(Path(self.save_path + 'Gene Usage Heatmaps'))
+
+
 
     # Plot the Jacquard Index (Heatmap).
-
-    # Plot the gene usage in each repertoire (Maybe a Heatmap?)
 
     # Plot the amino acid distribution for each repertoire (Sequence logo graph).
 
