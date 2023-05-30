@@ -43,6 +43,7 @@ class ExploratoryAnalyzer(DataLoader):
         self.sequence_counts = {}
         self.seq_len_info = {}
         self.gene_usage = {}
+        self.jaccard_index = {}
 
     def __str__(self):
         return "Exploratory Data Analysis Object."
@@ -95,17 +96,34 @@ class ExploratoryAnalyzer(DataLoader):
         for gene in gene_regions:
             self.gene_usage[gene] = {repertoire: data[repertoire][gene].value_counts(normalize=True) for repertoire in data}
             self.logger.debug(f" The usage counts for {gene} are {self.gene_usage[gene]}")
-
-        '''TODO'''
-        # Comparing the number of unknowns in the repertoire. 
-
     
+    def compute_jaccard_index(self, data:dict):
+        ''' Computes the Jaccard similarity index between each of the diseases. '''
+
+        self.logger.info("Computing the Jaccard Index.")
+        for repertoire_A in data:    
+
+            # Holds the jaccard score for repertoire A vs repertoire B
+            jaccard_scores = {}
+
+            for repertoire_B in data:
+
+                # No point in comparing it to itself. 
+                if repertoire_A == repertoire_B:
+                    continue
+                # Compute the Jaccard index between repertoire A and all other repertoires in the dataset. 
+                intersection = len(set(data[repertoire_A]['AASeq']).intersection(data[repertoire_B]['AASeq']))
+                self.logger.debug(f"The intersection between {repertoire_A} and {repertoire_B} is {intersection}.")
+                union = len(set(data[repertoire_A]['AASeq']).union(data[repertoire_B]['AASeq']))
+                self.logger.debug(f"The union between {repertoire_A} and {repertoire_B} is {union}.")
+                jaccard_scores[repertoire_B] = intersection/union
+            
+            # Dictionary hold the jaccard index between repertoire A and all other repertoires. 
+            self.jaccard_index[repertoire_A] = jaccard_scores
+            self.logger.debug(f"Jaccard index for {repertoire_A} = {jaccard_scores}")
+
+
     '''TODO'''
-    # Collect Jaccard Index of each disease.
-
-    # Collect the gene usage of each disease. 
-        # Again we want a proportion here, what proportion sequences in a repertoire use this gene. 
-
     # Collect the Amino acid distribution for each disease. 
         # We want a proportion here, otherwise we will just be getting high scores for large repertoires. 
 
@@ -197,13 +215,12 @@ class Plotter():
         plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
         self.logger.info("Sequence length distribution chart saved.")
 
-
     def plot_gene_usage(self):
         ''' Plots a heatmap of the gene permutations in each disease for V, D and J region '''
 
         # There are only 3 regions in analysis so hard coding the number of graphs should be okay. 
         # Collect the data for each of the heatmaps.
-        vgene_df = pd.DataFrame(self.eda.gene_usage['Vregion']).dropna(axis=0, how='all').fillna(0).transpose()
+        vgene_df = pd.DataFrame(self.eda.gene_usage['Vregion']).fillna(0).transpose()
         dgene_df = pd.DataFrame(self.eda.gene_usage['Dregion']).fillna(0).transpose()
         jgene_df = pd.DataFrame(self.eda.gene_usage['Jregion']).fillna(0).transpose()
         self.logger.debug(vgene_df)
@@ -222,9 +239,28 @@ class Plotter():
         plt.yticks(fontsize=15)
         plt.savefig(Path(self.save_path + 'Gene Usage Heatmaps'))
 
+    def plot_jaccard_index(self):
 
+        # Data.
+        repertoires = self.eda.jaccard_index.keys()
+        jaccard_value_list = []
+        for repertoire in repertoires:
+            jaccard_value_list.append(self.eda.jaccard_index[repertoire])
+        jaccard_df = pd.DataFrame(jaccard_value_list, index=repertoires, columns=repertoires)
+        self.logger.debug(jaccard_df)
 
-    # Plot the Jacquard Index (Heatmap).
+        # Plot.
+        fig = plt.figure(figsize=(10, 10))
+
+        mask = np.zeros(jaccard_df.shape, dtype=bool) 
+        mask[np.triu_indices(len(mask))] = True 
+        np.fill_diagonal(jaccard_df.values, 0)
+        self.logger.debug(jaccard_df)
+
+        sns.heatmap(jaccard_df, vmin=0.001, vmax=0.2, mask=mask)
+        plt.tight_layout()
+        plt.savefig(Path(self.save_path + 'Jaccard_HeatMap'))
+
 
     # Plot the amino acid distribution for each repertoire (Sequence logo graph).
 
