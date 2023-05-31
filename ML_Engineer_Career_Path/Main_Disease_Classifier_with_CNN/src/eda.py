@@ -44,6 +44,7 @@ class ExploratoryAnalyzer(DataLoader):
         self.seq_len_info = {}
         self.gene_usage = {}
         self.jaccard_index = {}
+        self.aa_counts = {}
 
     def __str__(self):
         return "Exploratory Data Analysis Object."
@@ -122,10 +123,15 @@ class ExploratoryAnalyzer(DataLoader):
             self.jaccard_index[repertoire_A] = jaccard_scores
             self.logger.debug(f"Jaccard index for {repertoire_A} = {jaccard_scores}")
 
-
-    '''TODO'''
-    # Collect the Amino acid distribution for each disease. 
-        # We want a proportion here, otherwise we will just be getting high scores for large repertoires. 
+    def count_aa_occurrences(self, data:dict):
+        ''' Counts the proportion of occurrences each amino acid has in a repertoire. '''
+        self.logger.info("Counting amino acids present in the repertoire.")
+        for repertoire in data:
+            # Splits the sequence into characters making a new dataframe.
+            # First column and '' at end of seq needs to be removed due to quirk in str.split method in pandas. 
+            aa_breakdown = (data[repertoire]['AASeq'].str.split('', expand=True).iloc[:, 1:].replace({'': None}))
+            self.aa_counts[repertoire] = {position : aa_breakdown[position].value_counts(normalize=True) for position in aa_breakdown.columns}
+            self.logger.debug(self.aa_counts[repertoire])
 
 
 
