@@ -156,7 +156,12 @@ class Plotter():
     Class interacts with ExploratoryAnalyzer object to plot visualizations. 
     
     Plots:
-        - 
+        - Bar plot of sequence counts per cancer type.
+        - Pie chart of sequences per cancer type in the whole dataset.
+        - Lineplot of sequence length distribution per cancer type.
+        - Heatmap of gene usage per cancer type.
+        - Heatmap of Jaccard index between cancer types.
+        - Heatmap of proportional amino acid presence per cancer type.
     '''
 
     def __init__(self, eda, save_path='Figures/EDA/'): # unsupervised_vis
@@ -264,7 +269,7 @@ class Plotter():
 
         sns.heatmap(jaccard_df, vmin=0.001, vmax=0.2, mask=mask)
         plt.tight_layout()
-        plt.savefig(Path(self.save_path + 'Jaccard_HeatMap'))
+        plt.savefig(Path(self.save_path + 'Jaccard_Heatmap'))
 
 
     # Plot the amino acid distribution for each repertoire (heatmap).
