@@ -8,21 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 # Local Imports
 from src.base_logger import logging
-
-class DataLoader():
-    '''
-    Class will load the data into a dictionary for use in analysis.
-    '''
-
-    # Function that loads each of the CSV files for analysis.
-    def __init__(self, collection_path):
-        self.collection_path = collection_path
-
-    def collect_files(self):
-        # Returns the file name (stripping the csv tag) with a data frame of the sequences.
-        return {os.path.splitext(file.name)[0]: pd.read_csv(file) for file in self.collection_path.iterdir()}
+from src.data_cleaning import DataLoader
 
 class ExploratoryAnalyzer(DataLoader):
     '''
@@ -57,7 +46,7 @@ class ExploratoryAnalyzer(DataLoader):
         for repertoire in data:
             self.sequence_counts[repertoire] = len(data[repertoire].index)
         
-    def count_sequence_length_mertics(self, data:dict) -> dict:
+    def count_sequence_length_metrics(self, data:dict) -> dict:
         ''' Computes metrics regarding the length of sequences in the repertoires.'''
 
         self.logger.info("Computing the sequence length metrics.")
@@ -132,28 +121,37 @@ class ExploratoryAnalyzer(DataLoader):
             aa_breakdown = (data[repertoire]['AASeq'].str.split('', expand=True).iloc[:, 1:-1].replace({'': None}))
             self.aa_counts[repertoire] = {position : aa_breakdown[position].value_counts(normalize=True) for position in aa_breakdown.columns}
             self.logger.debug(self.aa_counts[repertoire])
-      
+    
+    def complete_eda(self, data:dict):
+        ''' Performs the complete EDA. '''
+        self.count_sequences_per_disease(data)
+        self.count_sequence_length_metrics(data)
+        self.count_gene_usage(data)
+        self.compute_jaccard_index(data)
+        self.count_aa_occurrences(data)
 
 class UnsupervisedVisualizer(DataLoader):
     '''
-    Class will perform all of the preprocessing required to perform unsupervised learning.
-    Utilizes a 'Bag of Words' approach, counting the occurrences of k-mer in each subsample.
-    Creates a data frame of the counts per sample then performs PCA analysis projecting the data into 2D.
+    Class will perform unsupervised learning for visualization.
+    Data preprocessing is performed by the Unsupervised Preprocessor class.
+    Utilizes Sklearn's pipeline class to perform analysis.
+    Performs PCA analysis projecting the data into 2D.
     Plots are created using the plotter object. 
     '''
 
-    def __init__(self):
+    def __init__(self, collection_path=Path('data/cleaned_files')):
+        super().__init__(collection_path)
         self.logger = logging.getLogger("Unsupervised Visualizer.")
+        self.pca_data = {}
 
-    # Perform Unsupervised learning.
-        # Subsample each file. 
-        # Count the Kmers in each subsample
-        # PCA into 2 dimensions, be sure to include colors so we can visually see what is happening. 
+    def perform_pca(self, data:dict):
+        ''' Performs PCA analysis on the data. '''
+        pass
 
 
 class Plotter():
     '''
-    Class interacts with ExploratoryAnalyzer object to plot visualizations. 
+    Class interacts with ExploratoryAnalyzer and UnsupervisedVisualizer objects to plot visualizations. 
     
     Plots:
         - Bar plot of sequence counts per cancer type.
@@ -164,11 +162,12 @@ class Plotter():
         - Heatmap of proportional amino acid presence per cancer type.
     '''
 
-    def __init__(self, eda, save_path='Figures/EDA/'): # unsupervised_vis
+    def __init__(self, eda):
         self.logger = logging.getLogger("Plotter")
         self.eda = eda
         # self.unsupervised_vis = unsupervised_vis
-        self.save_path = save_path
+        self.eda_save_path = 'Figures/EDA/'
+        self.unsupervised_save_path = 'Figures/Unsupervised/'
     
     def plot_sequence_count_bar(self):
         ''' Plots the number of sequences each cancer type contains. '''
@@ -181,7 +180,7 @@ class Plotter():
         plt.yticks(fontsize=10)
         plt.ticklabel_format(style='plain', axis='y')
         plt.title("Comparison of Total Sequence Count per Cancer Type")
-        plt.savefig(Path(self.save_path + 'Sequence_Counts'))
+        plt.savefig(Path(self.eda_save_path + 'Sequence_Counts'))
         self.logger.info("Sequence bar chart saved.")
 
     def plot_sequence_count_pie(self):
@@ -199,7 +198,7 @@ class Plotter():
         fig = plt.figure(figsize=(10,10))
         plt.pie(percent_of_database, labels=list(self.eda.sequence_counts.keys()), autopct='%1.1f%%')
         plt.title("Percentage of Cancer Type in Total Database.")
-        plt.savefig(Path(self.save_path + 'Cancer_Type_Proportions'))
+        plt.savefig(Path(self.eda_save_path + 'Cancer_Type_Proportions'))
         self.logger.info("Database proportion pie chart saved.")
 
     def plot_sequence_len_distribution(self):
@@ -222,7 +221,7 @@ class Plotter():
         plt.ylabel("Proportion of Repertoire")
         plt.xlabel("Length of Sequence")
         plt.legend()
-        plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
+        plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
         self.logger.info("Sequence length distribution chart saved.")
 
     def plot_gene_usage(self):
@@ -247,7 +246,7 @@ class Plotter():
         ax[2].set_title("Percentage J Gene Usage Between Diseases.")
         plt.xticks(fontsize=8, rotation=90)
         plt.yticks(fontsize=15)
-        plt.savefig(Path(self.save_path + 'Gene Usage Heatmaps'))
+        plt.savefig(Path(self.eda_save_path + 'Gene Usage Heatmaps'))
 
     def plot_jaccard_index(self):
 
@@ -269,7 +268,7 @@ class Plotter():
 
         sns.heatmap(jaccard_df, vmin=0.001, vmax=0.2, mask=mask)
         plt.tight_layout()
-        plt.savefig(Path(self.save_path + 'Jaccard_Heatmap'))
+        plt.savefig(Path(self.eda_save_path + 'Jaccard_Heatmap'))
 
 
     # Plot the amino acid distribution for each repertoire (heatmap).
@@ -286,8 +285,21 @@ class Plotter():
             sns.heatmap(data, vmax=0.4, cbar=i == 0, ax=ax.flat[i], cbar_ax=cbar_ax)
             ax.flat[i].set_title(f"{keys[i]} Amino Acid Distribution")
         fig.tight_layout(rect=[0, 0, .9, 1])
-        plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
+        plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
 
-    # Plot the unsupervised learning charts, this should allow us to see if subsample's from the different cancer types cluster together. 
+    def plot_all_eda(self):
+        ''' Runs all the EDA plots. '''
+
+        self.plot_sequence_count_bar()
+        self.plot_sequence_count_pie()
+        self.plot_sequence_len_distribution()
+        self.plot_gene_usage()
+        self.plot_jaccard_index()
+        self.plot_aa_distribtuion()
+        self.logger.info("All EDA plots saved.")
+
+    
+    '''TODO'''
+    # Unsupervised learning plots.
+     # Plot the unsupervised learning charts, this should allow us to see if subsample's from the different cancer types cluster together. 
         # Scatter graph, remember to color them according to disease so we can see what is going where. 
-
