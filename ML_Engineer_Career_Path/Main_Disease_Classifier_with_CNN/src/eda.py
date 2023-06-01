@@ -129,11 +129,10 @@ class ExploratoryAnalyzer(DataLoader):
         for repertoire in data:
             # Splits the sequence into characters making a new dataframe.
             # First column and '' at end of seq needs to be removed due to quirk in str.split method in pandas. 
-            aa_breakdown = (data[repertoire]['AASeq'].str.split('', expand=True).iloc[:, 1:].replace({'': None}))
+            aa_breakdown = (data[repertoire]['AASeq'].str.split('', expand=True).iloc[:, 1:-1].replace({'': None}))
             self.aa_counts[repertoire] = {position : aa_breakdown[position].value_counts(normalize=True) for position in aa_breakdown.columns}
             self.logger.debug(self.aa_counts[repertoire])
-
-
+      
 
 class UnsupervisedVisualizer(DataLoader):
     '''
@@ -268,7 +267,21 @@ class Plotter():
         plt.savefig(Path(self.save_path + 'Jaccard_HeatMap'))
 
 
-    # Plot the amino acid distribution for each repertoire (Sequence logo graph).
+    # Plot the amino acid distribution for each repertoire (heatmap).
+    def plot_aa_distribtuion(self):
+        ''' Plots the amino acid distribution for each repertoire in a heatmap. '''
+
+        # Plot.
+        keys = list(self.eda.aa_counts.keys())
+        fig, ax = plt.subplots(3, 3, figsize=(30, 20), sharey='row')
+        cbar_ax = fig.add_axes([.91, .3, .03, .4])
+
+        for i in range(len(keys)):
+            data = pd.DataFrame(self.eda.aa_counts[keys[i]]).fillna(0)
+            sns.heatmap(data, vmax=0.4, cbar=i == 0, ax=ax.flat[i], cbar_ax=cbar_ax)
+            ax.flat[i].set_title(f"{keys[i]} Amino Acid Distribution")
+        fig.tight_layout(rect=[0, 0, .9, 1])
+        plt.savefig(Path(self.save_path + 'Amino_Acid_Distributions'))
 
     # Plot the unsupervised learning charts, this should allow us to see if subsample's from the different cancer types cluster together. 
         # Scatter graph, remember to color them according to disease so we can see what is going where. 
