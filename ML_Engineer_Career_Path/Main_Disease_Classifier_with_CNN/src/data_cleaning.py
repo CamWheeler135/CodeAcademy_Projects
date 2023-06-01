@@ -121,7 +121,7 @@ class DataCleaner():
                     self.logger.debug("No special characters found.")
                 else:
                     # Drop the rows that contain the errors.
-                    dataset[file].drop(idx, inplace=True)
+                    dataset[file] = dataset[file].drop(idx)
 
         return dataset
 
@@ -141,6 +141,8 @@ class DataCleaner():
             self.logger.debug(f"Handling {file}")
             self.logger.debug(f"The length of {file}'s data-frame before length removal = {len(dataset[file].index)}")
 
+            # Strip the data of any possible whitespace.
+            dataset[file]['AASeq'] = dataset[file]['AASeq'].str.strip()
             # Remove sequences based on length parameters
             dataset[file] = dataset[file][(dataset[file]['AASeq'].str.len() >= self.min_seq_size) 
                                         & (dataset[file]['AASeq'].str.len() <= self.max_seq_size)]
@@ -187,3 +189,18 @@ class DataCleaner():
         length_cleaned = self.assert_size(bad_reads_cleaned)
         self.join_files(length_cleaned)
         self.collect_general_info()
+        self.logger.info("Data cleaning complete.")
+
+    
+class DataLoader():
+    '''
+    Class will load the data into a dictionary for use in analysis.
+    '''
+
+    # Function that loads each of the CSV files for analysis.
+    def __init__(self, collection_path):
+        self.collection_path = collection_path
+
+    def collect_files(self):
+        # Returns the file name (stripping the csv tag) with a data frame of the sequences.
+        return {os.path.splitext(file.name)[0]: pd.read_csv(file) for file in self.collection_path.iterdir()}
