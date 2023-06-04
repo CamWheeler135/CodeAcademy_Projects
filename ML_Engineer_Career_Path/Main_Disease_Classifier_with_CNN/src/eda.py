@@ -11,9 +11,9 @@ import seaborn as sns
 
 # Local Imports
 from src.base_logger import logging
-from src.data_cleaning import DataLoader
+from src.data_cleaning import DataHandler
 
-class ExploratoryAnalyzer(DataLoader):
+class ExploratoryAnalyzer():
     '''
     Class will extract and store information for exploratory data analysis. 
     All plots are created using the 'Plotter" object. 
@@ -26,17 +26,20 @@ class ExploratoryAnalyzer(DataLoader):
         - Repertoire amino acid distributions.
     '''
     
-    def __init__(self, collection_path=Path('data/cleaned_files')):
-        super().__init__(collection_path)
+    def __init__(self, handler:DataHandler):
         self.logger = logging.getLogger("EDA Analyzer")
+        self.handler = handler
         self.sequence_counts = {}
-        self.seq_len_info = {}
+        self.seq_len_metrics = {}
         self.gene_usage = {}
         self.jaccard_index = {}
         self.aa_counts = {}
 
     def __str__(self):
         return "Exploratory Data Analysis Object."
+    
+    def collect_repertoires(self) -> dict:
+         return self.handler.collect_cleaned_files()
     
     # Collect the number of sequences we have for each disease.
     def count_sequences_per_disease(self, data:dict) -> dict:
@@ -47,7 +50,12 @@ class ExploratoryAnalyzer(DataLoader):
             self.sequence_counts[repertoire] = len(data[repertoire].index)
         
     def count_sequence_length_metrics(self, data:dict) -> dict:
-        ''' Computes metrics regarding the length of sequences in the repertoires.'''
+        ''' 
+        Computes metrics regarding the length of sequences in the repertoires.
+        - Seq len distribution (repertoire).
+        - Mean seq len (dataset).
+        - Std seq len (dataset).
+        '''
 
         self.logger.info("Computing the sequence length metrics.")
 
@@ -59,22 +67,23 @@ class ExploratoryAnalyzer(DataLoader):
         # Computing the sequence lengths for each repertoire.
         for repertoire in data:
             lengths = data[repertoire]['AASeq'].str.len()
+            self.seq_len_metrics[repertoire] = {'len_counts': lengths.value_counts(normalize=True)}
+            # Manipulate variables for computing database mean length and standard deviation.
             repertoire_seq_lens.append(list(lengths)) 
-            self.seq_len_info[repertoire] = {'len_counts': lengths.value_counts() / len(data[repertoire].index) * 100}
             total_seq_lens += np.sum(lengths)
             total_num_of_seqs += self.sequence_counts[repertoire]
-            self.logger.debug(self.seq_len_info[repertoire])
+            self.logger.debug(self.seq_len_metrics[repertoire])
 
         # Computing the mean.
         self.logger.debug(f"The total length of sequences in the database are {total_seq_lens}")
         self.logger.debug(f"The overall number of sequences in the database are {total_num_of_seqs}")
         mean = total_seq_lens / total_num_of_seqs
-        self.seq_len_info['mean_len'] = mean
+        self.seq_len_metrics['mean_len'] = mean
 
         # Computing the standard deviation. 
         len_array = np.hstack(repertoire_seq_lens)
         standard_dev = np.sqrt((np.sum((len_array - mean) ** 2)) / total_num_of_seqs)
-        self.seq_len_info['standard_dev'] = standard_dev
+        self.seq_len_metrics['standard_dev'] = standard_dev
         self.logger.debug(f"The standard deviation is {standard_dev}")
 
     def count_gene_usage(self, data:dict):
@@ -122,15 +131,16 @@ class ExploratoryAnalyzer(DataLoader):
             self.aa_counts[repertoire] = {position : aa_breakdown[position].value_counts(normalize=True) for position in aa_breakdown.columns}
             self.logger.debug(self.aa_counts[repertoire])
     
-    def complete_eda(self, data:dict):
+    def complete_eda(self):
         ''' Performs the complete EDA. '''
-        self.count_sequences_per_disease(data)
-        self.count_sequence_length_metrics(data)
-        self.count_gene_usage(data)
-        self.compute_jaccard_index(data)
-        self.count_aa_occurrences(data)
+        repertoires = self.collect_repertoires()
+        self.count_sequences_per_disease(repertoires)
+        self.count_sequence_length_metrics(repertoires)
+        self.count_gene_usage(repertoires)
+        self.compute_jaccard_index(repertoires)
+        self.count_aa_occurrences(repertoires)
 
-class UnsupervisedVisualizer(DataLoader):
+class UnsupervisedVisualizer():
     '''
     Class will perform unsupervised learning for visualization.
     Data preprocessing is performed by the Unsupervised Preprocessor class.
@@ -146,6 +156,10 @@ class UnsupervisedVisualizer(DataLoader):
 
     def perform_pca(self, data:dict):
         ''' Performs PCA analysis on the data. '''
+        # Takes in the dataset
+        # Performs PCA analysis
+            # Here we will use sklearn's pipeline class and standard scaler before performing PCA analysis.
+        # Assigns data the PCA data attribute to be used for plotting.
         pass
 
 
@@ -162,7 +176,7 @@ class Plotter():
         - Heatmap of proportional amino acid presence per cancer type.
     '''
 
-    def __init__(self, eda):
+    def __init__(self, eda: ExploratoryAnalyzer):
         self.logger = logging.getLogger("Plotter")
         self.eda = eda
         # self.unsupervised_vis = unsupervised_vis
@@ -205,15 +219,16 @@ class Plotter():
         '''Plots the sequence length distribution of each repertoire.'''
 
         # Data.
-        mean = self.eda.seq_len_info['mean_len']
-        standard_dev = self.eda.seq_len_info['standard_dev']
-        del self.eda.seq_len_info['mean_len']
-        del self.eda.seq_len_info['standard_dev']
+        mean = self.eda.seq_len_metrics['mean_len']
+        standard_dev = self.eda.seq_len_metrics['standard_dev']
+        del self.eda.seq_len_metrics['mean_len']
+        del self.eda.seq_len_metrics['standard_dev']
 
         # Plot.
         fig = plt.figure(figsize=(10, 10))
-        for repertoire in self.eda.seq_len_info.keys():
-            sns.lineplot(x=self.eda.seq_len_info[repertoire]['len_counts'].index, y=self.eda.seq_len_info[repertoire]['len_counts'], label=str(repertoire))
+        for repertoire in self.eda.seq_len_metrics.keys():
+            sns.lineplot(x=self.eda.seq_len_metrics[repertoire]['len_counts'].index, 
+                         y=self.eda.seq_len_metrics[repertoire]['len_counts'], label=str(repertoire))
         plt.axvline(mean , color='k', ls='--', lw=2)
         plt.axvline(mean - standard_dev, color='k', ls='--', lw=1)
         plt.axvline(mean + standard_dev, color='k', ls='--', lw=1)
@@ -287,7 +302,7 @@ class Plotter():
         fig.tight_layout(rect=[0, 0, .9, 1])
         plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
 
-    def plot_all_eda(self):
+    def complete_plots(self):
         ''' Runs all the EDA plots. '''
 
         self.plot_sequence_count_bar()
