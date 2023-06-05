@@ -17,12 +17,42 @@ class DataHandler():
 
     # Function that loads each of the CSV files for analysis.
     def __init__(self, collection_path: Path, save_path: Path):
+        self.logger = logging.getLogger('Data Handler')
         self.collection_path = collection_path
         self.save_path = save_path
 
-    def collect_raw_files(self) -> dict:
-        '''Collects the data from the collection path file and returns a dictionary of the data.'''
-        return {os.path.splitext(file.name)[0]: pd.read_table(file) for file in self.collection_path.iterdir()}
+    def collect_raw_tcrdb_files(self) -> dict:
+        '''
+        Collects the TCRDB data from the collection path file and returns a dictionary of the data.
+        Assumes certain file properties:
+        - The file is from the TCRdb.
+        - Project files are labelled with the prefix PRJ.
+        - File names contain the disease type. 
+
+        Output {sample_name: pd.DataFrame}
+        DataFrame columns (in order) = ['AASeq', 'Vregion', 'Dregion', 'Jregion']
+        '''
+
+        repertoire_dict = {}
+
+        if len(os.listdir(self.collection_path)) == 0:
+            raise FileNotFoundError
+
+        for sample in self.collection_path.iterdir():
+            self.logger.debug(f"Loading {sample.name} into dictionary.")
+
+            # Complete project files do not have certain metadata.
+            if 'PRJ' in sample.name:
+                repertoire_dict[sample.name] = pd.read_table(sample, header=0, 
+                                                        usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion'])
+            # Single files contain metadata, need to skip over. 
+            else:
+                repertoire_dict[sample.name] = pd.read_table(sample, header=1, 
+                                                        usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion'])
+            
+        self.logger.info("All files collected.")
+        
+        return repertoire_dict
 
     def collect_cleaned_files(self) -> dict:
         '''Collects the data from the collection path file and returns a dictionary of the data.'''
@@ -37,7 +67,6 @@ class DataHandler():
     # Add support for error handling when collecting and saving files. 
     # Such as creating directories if we need to, handling empty files etc. 
     # This should help us take away the file handling from our classes that access and save data.
-
 
 
 class DataCleaner():
@@ -60,60 +89,13 @@ class DataCleaner():
         self.min_seq_size = 10
         self.max_seq_size = 24
         self.special_characters = [r'\+', r'\*', r'_']
-        self.column_order = ['AASeq', 'Vregion', 'Jregion', 'Dregion']
 
     def __str__(self):
-        return "Object for general dataset cleaning, standard input --> data/raw_files, standard output --> data/cleaned_files. "
+        return f"Data Cleaner Object. \n\tMin Sequence Size: {self.min_seq_size} \n\tMax Sequence Size: {self.max_seq_size} \n\tSpecial Characters: {self.special_characters}"
     
     def collect_files(self) -> dict:
-        return self.handler.collect_raw_files()
-
-    def collect_data_for_analysis(self, repertoires: dict) -> dict:
-        ''' 
-        Remove un-needed columns, will reorder columns so each data frame is homogenous.
-        There are several different files available on the TCRdb, this function will handle both single samples, and whole projects.
-        The two types of files have different structures so need to be handled differently.
-        Assumptions:
-        - The file is from the TCRdb, support for other sources will be added later. 
-        - Project files are labelled with the prefix PRJ.
-        - File names contain the disease type. 
-        '''
-        self.logger.info('Collecting files.')
-
-        if len(os.listdir(self.input_path)) == 0:
-            raise FileNotFoundError
-
-        collection = {}
-
-        for sample, data in repertoires.items():
-
-            pass
-
-            '''TODO: Refactor this code to be more efficient.'''
-
-        #     # Complete project files do not have certain metadata.
-        #     if 'PRJ' in sample:
-        #         collection[sample] = pd.read_table(file, header=0)
-        #     # Single files contain metadata, need to skip over. 
-        #     else:
-        #         collection[sample] = pd.read_table(file, header=1)
-             
-        #     # Ensure that the data frames have the columns needed for analysis with EDA and ML. 
-        #     if not set(self.column_order).issubset(collection[file.name].columns):
-        #         self.logger.warning(f"{file.name} does not contain the correct columns for analysis, ensure columns are correct.")
-        #         self.logger.warning(f"Removing {file.name} from analysis.")
-        #         del collection[file.name]
-        #         # Move onto the next file. 
-        #         continue
-
-        #     # Certain file column order are not the same, this code orders them correctly.
-        #     if not collection[file.name].columns.equals(self.column_order):
-        #         self.logger.debug(f"Column order on {file.name} is not standard, changes have been made.")
-        #         collection[file.name] = collection[file.name].reindex(columns=self.column_order) # This will also drop any columns we don't need. 
-            
-        # self.logger.info("All files collected.")
-        
-        # return collection
+        ''' Collects the files from the data/raw_files directory using the DataHandler class. '''
+        return self.handler.collect_raw_tcrdb_files()
     
     def remove_bad_reads(self, dataset:dict, special_characters:list=None) -> dict:
         ''' 
@@ -204,9 +186,8 @@ class DataCleaner():
         
     def complete_clean(self):
         ''' Performs a complete collection, cleaning and naming of dataset inside of input path. '''
-        dataset = self.collect_data()
+        dataset = self.collect_files()
         bad_reads_cleaned = self.remove_bad_reads(dataset)
         length_cleaned = self.assert_size(bad_reads_cleaned)
         self.join_files(length_cleaned)
-        self.collect_general_info()
         self.logger.info("Data cleaning complete.")
