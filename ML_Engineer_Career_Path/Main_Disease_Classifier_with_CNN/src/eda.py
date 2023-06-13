@@ -7,7 +7,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 # Local Imports
 from src.base_logger import logging
@@ -39,7 +41,7 @@ class ExploratoryAnalyzer():
         return "Exploratory Data Analysis Object."
     
     def collect_repertoires(self) -> dict:
-         return self.handler.collect_cleaned_files()
+         return self.handler.collect_csv_files()
     
     # Collect the number of sequences we have for each disease.
     def count_sequences_per_disease(self, data:dict) -> dict:
@@ -149,18 +151,38 @@ class UnsupervisedVisualizer():
     Plots are created using the plotter object. 
     '''
 
-    def __init__(self, collection_path=Path('data/cleaned_files')):
-        super().__init__(collection_path)
+    def __init__(self, handler):
         self.logger = logging.getLogger("Unsupervised Visualizer.")
-        self.pca_data = {}
+        self.handler = handler
+        self.pca_data = None
+        self.pca_targets = None
+
+    def collect_kmer_dataset(self):
+        return self.handler.collect_csv_files()
 
     def perform_pca(self, data:dict):
         ''' Performs PCA analysis on the data. '''
-        # Takes in the dataset
-        # Performs PCA analysis
-            # Here we will use sklearn's pipeline class and standard scaler before performing PCA analysis.
-        # Assigns data the PCA data attribute to be used for plotting.
-        pass
+
+        self.logger.info("Performing PCA Analysis.")
+
+        pca_pipeline = Pipeline([("scaler", StandardScaler()),
+                                ("pca", PCA(n_components=2))])
+        
+        assert len(data.keys()) == 1 # Only one dataset should be present.
+        
+        for kmer_dataset in data.values():
+            X_train = kmer_dataset.drop(columns='target')
+            Y_train = kmer_dataset['target']
+            self.pca_data = pd.DataFrame(pca_pipeline.fit_transform(X_train))
+            self.pca_targets = Y_train
+        
+    def save_pca_df(self):
+        self.handler.save_as_csv(self.pca_data)
+
+    def complete_pca_analysis(self):
+        repertoires = self.collect_kmer_dataset()
+        self.perform_pca(repertoires)
+        self.save_pca_df()
 
 
 class Plotter():
@@ -176,10 +198,10 @@ class Plotter():
         - Heatmap of proportional amino acid presence per cancer type.
     '''
 
-    def __init__(self, eda: ExploratoryAnalyzer):
+    def __init__(self,eda: ExploratoryAnalyzer, unsupervised_vis: UnsupervisedVisualizer):
         self.logger = logging.getLogger("Plotter")
         self.eda = eda
-        # self.unsupervised_vis = unsupervised_vis
+        self.unsupervised_vis = unsupervised_vis
         self.eda_save_path = 'Figures/EDA/'
         self.unsupervised_save_path = 'Figures/Unsupervised/'
     
@@ -301,9 +323,25 @@ class Plotter():
             ax.flat[i].set_title(f"{keys[i]} Amino Acid Distribution")
         fig.tight_layout(rect=[0, 0, .9, 1])
         plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
+    
+    def plot_pca(self):
+        ''' Plots a scatter graph of the pca data. '''
+
+        # Data.
+        pca_x= self.unsupervised_vis.pca_data.iloc[:, 0]
+        pca_y = self.unsupervised_vis.pca_data.iloc[:, 1]
+        pca_targets = self.unsupervised_vis.pca_targets
+
+        # Plot.
+        fig = plt.figure(figsize=(10, 10))
+        plt.scatter(pca_x, pca_y, c=pca_targets, cmap='tab10')
+        plt.title("PCA Scatter Plot")
+        plt.xlabel("PCA 1")
+        plt.ylabel("PCA 2")
+        plt.savefig(Path(self.unsupervised_save_path + 'PCA_Scatter_Plot'))
 
     def complete_plots(self):
-        ''' Runs all the EDA plots. '''
+        ''' Runs all EDA and Unsupervised plots. '''
 
         self.plot_sequence_count_bar()
         self.plot_sequence_count_pie()
@@ -311,10 +349,5 @@ class Plotter():
         self.plot_gene_usage()
         self.plot_jaccard_index()
         self.plot_aa_distribtuion()
-        self.logger.info("All EDA plots saved.")
-
-    
-    '''TODO'''
-    # Unsupervised learning plots.
-     # Plot the unsupervised learning charts, this should allow us to see if subsample's from the different cancer types cluster together. 
-        # Scatter graph, remember to color them according to disease so we can see what is going where. 
+        self.plot_pca()
+        self.logger.info("All plots saved.")
