@@ -53,12 +53,12 @@ class UnsupervisedPreprocessor(BasePreprocessor):
         self.subsample_size = subsample_size
         self.num_of_samples = num_of_samples
         self.kmer_size = kmer_size
-        self.base_kmer_counter = {''.join(kmer): 0 for kmer in product('ARNDCQEGHILKMFPSTWYV', repeat=self.kmer_size)}
+        self.base_kmer_counter = {''.join(kmer): 0 for kmer in product('ARNDCEQGHILKMFPSTWYV', repeat=self.kmer_size)}
         self.handler = handler
 
     # Abstract method.
     def collect_repertoires(self) -> dict:
-        return self.handler.collect_cleaned_files()
+        return self.handler.collect_csv_files()
 
     # Abstract method.
     def sub_sample_repertoire(self, data:dict) -> dict:
@@ -85,7 +85,7 @@ class UnsupervisedPreprocessor(BasePreprocessor):
         Iterates through each sequence in the sub-sample, counting the number of kmers present.
         Returns a dictionary of the kmers and their counts.
         '''
-
+        self.logger.debug(f"Counting K-mers from subsamples, K-mer size is {self.kmer_size}")
         # Construct the kmer dictionary.
         kmer_vals = self.base_kmer_counter.copy()
         # Iterate through the sequences in the subsample and increment the dictionary values.
