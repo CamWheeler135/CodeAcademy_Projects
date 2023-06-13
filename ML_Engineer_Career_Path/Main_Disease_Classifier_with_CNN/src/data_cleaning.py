@@ -16,10 +16,12 @@ class DataHandler():
     '''
 
     # Function that loads each of the CSV files for analysis.
-    def __init__(self, collection_path: Path, save_path: Path):
+    def __init__(self, collection_path:Path, save_path:Path=None):
         self.logger = logging.getLogger('Data Handler')
         self.collection_path = collection_path
         self.save_path = save_path
+        if self.save_path == None:
+            self.logger.warning('No save path given.')
 
     def collect_raw_tcrdb_files(self) -> dict:
         '''
@@ -54,7 +56,7 @@ class DataHandler():
         
         return repertoire_dict
 
-    def collect_cleaned_files(self) -> dict:
+    def collect_csv_files(self) -> dict:
         '''Collects the data from the collection path file and returns a dictionary of the data.'''
         # Returns the file name (stripping the csv tag) with a data frame of the sequences.
         return {os.path.splitext(file.name)[0]: pd.read_csv(file) for file in self.collection_path.iterdir()}
