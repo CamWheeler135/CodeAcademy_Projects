@@ -2,7 +2,6 @@
 
 # Module Imports
 from pathlib import Path
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -145,7 +144,7 @@ class ExploratoryAnalyzer():
 class UnsupervisedVisualizer():
     '''
     Class will perform unsupervised learning for visualization.
-    Data preprocessing is performed by the Unsupervised Preprocessor class.
+    Data preprocessing is performed by the Kmer Preprocessor class.
     Utilizes Sklearn's pipeline class to perform analysis.
     Performs PCA analysis projecting the data into 2D.
     Plots are created using the plotter object. 

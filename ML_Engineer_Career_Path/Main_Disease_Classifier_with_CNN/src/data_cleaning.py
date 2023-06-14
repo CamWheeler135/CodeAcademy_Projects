@@ -30,7 +30,6 @@ class DataHandler():
         - The file is from the TCRdb.
         - Project files are labelled with the prefix PRJ.
         - File names contain the disease type. 
-
         Output {sample_name: pd.DataFrame}
         DataFrame columns (in order) = ['AASeq', 'Vregion', 'Dregion', 'Jregion']
         '''
@@ -51,7 +50,10 @@ class DataHandler():
             else:
                 repertoire_dict[sample.name] = pd.read_table(sample, header=1, 
                                                         usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion'])
-            
+
+        '''TODO'''
+        # We need to catch an error here, if the correct columns are not found, then we need to know how to process them. 
+
         self.logger.info("All files collected.")
         
         return repertoire_dict
@@ -110,12 +112,11 @@ class DataCleaner():
         '''
         self.logger.info("Searching for sequences that contain bad reads.")
 
-        files = dataset.keys()
         # Option to pass in specific special characters.
         if special_characters == None:
             special_characters = self.special_characters
         
-        for file in files:
+        for file in dataset.keys():
             self.logger.debug(f"Handling {file}.")
             for character in special_characters:
                 self.logger.debug(f"Handling {character}")
@@ -155,6 +156,16 @@ class DataCleaner():
         
         return dataset 
     
+    '''TODO'''
+    # This appears to need some work, it seems a bit messy.
+    # Need to clean up the way we name the files and save them. 
+    # This probs means that we look at the handler object.
+
+    def name_files(self, cancer_type:str):
+        ''' Gives files appropriate names according to disease. '''
+        return Path('data/cleaned_files/' + cancer_type + '.csv')
+    
+    
     def join_files(self, cleaned_data):
         '''
         Iterates through the dataset and aggregates the CDR3 sequences from the sample cancers into one data-frame and saves them.
@@ -173,18 +184,16 @@ class DataCleaner():
                 raise DiseaseNotSupportedError
             elif len(cancer_type_files) == 1:
                 save_path = self.name_files(cancer_type)
+                # Does not implement the handlers save function.
                 cleaned_data[cancer_type_files[0]].to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
             else:
             # Create the data frame for that cancer type and append all the data.)
                 cancer_type_df = pd.concat([cleaned_data[file] for file in cancer_type_files], ignore_index=True)
                 save_path = self.name_files(cancer_type)
+                # Does not implement the handlers save function.
                 cancer_type_df.to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
-
-    def name_files(self, cancer_type:str):
-        ''' Gives files appropriate names according to disease. '''
-        return Path('data/cleaned_files/' + cancer_type + '.csv')
         
     def complete_clean(self):
         ''' Performs a complete collection, cleaning and naming of dataset inside of input path. '''

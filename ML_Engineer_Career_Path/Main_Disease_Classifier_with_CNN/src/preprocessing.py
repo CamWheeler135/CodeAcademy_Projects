@@ -12,6 +12,7 @@ import nltk
 from src.base_logger import logging
 from src.data_cleaning import DataHandler
 
+# Skeletal must have methods for each preprocessing class.
 class BasePreprocessor(ABC):
 
     @abstractmethod
@@ -35,14 +36,14 @@ class BasePreprocessor(ABC):
         pass
 
 
-class UnsupervisedPreprocessor(BasePreprocessor):
+class KmerPreprocessor(BasePreprocessor):
     '''
     This class performs the preprocessing for the UnsupervisedVisualizer class.
     The preprocessing steps include:
-    - Sub-sampling each repertoire into size n.
-    - Counting the kmers present in each subsample. 
-    - Constructing a data frame of kmers.
-    - Receives a DataHandler object to load save the data upon initialization.
+    - Sub-sampling each repertoire x times into size n sub samples.
+    - Counting the kmers of size m (default value m=2) present in each subsample. 
+    - Constructing a data frame of kmers present in each subsample.
+    - Receives a DataHandler object upon initialization to load save the data as a csv file.
     '''
 
     def __init__(
@@ -62,7 +63,11 @@ class UnsupervisedPreprocessor(BasePreprocessor):
 
     # Abstract method.
     def sub_sample_repertoire(self, data:dict) -> dict:
-        ''' Take each repertoire and subsample it self.subsample_size times.'''
+        ''' 
+        Take each repertoire and subsample it self.subsample_size times.
+        Returns a dictionary of lists where each key is the disease name and each value is a list of lists.
+        Each sub-list contains the sequences sampled from the repertoire.
+        '''
 
         self.logger.info(f"Sub-sampling each repertoire into {self.num_of_samples} samples of size {self.subsample_size}.")
         repertoire_subsamples = {}
@@ -76,8 +81,7 @@ class UnsupervisedPreprocessor(BasePreprocessor):
 
     # Abstract method.
     def create_targets(self, data:dict) -> dict:
-        ''' Add the target column to the data.'''
-
+        ''' Creates a dictionary of the target values according to the dataset it has been given.'''
         return {disease: value for value, disease in enumerate(data.keys())}
     
     def count_kmers(self, sequences:list) -> dict:
@@ -88,6 +92,7 @@ class UnsupervisedPreprocessor(BasePreprocessor):
         self.logger.debug(f"Counting K-mers from subsamples, K-mer size is {self.kmer_size}")
         # Construct the kmer dictionary.
         kmer_vals = self.base_kmer_counter.copy()
+        self.logger.debug(f"Kmer dictionary: {kmer_vals}")
         # Iterate through the sequences in the subsample and increment the dictionary values.
         for sequence in sequences:
             kmer_iterator = nltk.ngrams(sequence, self.kmer_size)
@@ -113,8 +118,11 @@ class UnsupervisedPreprocessor(BasePreprocessor):
             self.logger.info(f"Counting the kmers present in each {repertoire} sub-sample'")
             for subsample in repertoire_subsamples[repertoire]:
                 subsample_kmers = self.count_kmers(subsample)
+                self.logger.debug(f"Kmer count for {subsample} is {subsample_kmers}")
+                # Adds the target value to the dictionary of kmers.
                 subsample_kmers['target'] = target_vals[repertoire]
                 kmer_list.append(subsample_kmers)
+
         return kmer_list
 
     # Abstract method.
