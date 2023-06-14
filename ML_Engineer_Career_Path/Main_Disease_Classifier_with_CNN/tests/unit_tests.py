@@ -45,6 +45,9 @@ class TestDataHandler(unittest.TestCase):
         self.assertEqual(len(project_file_df_columns), 4)
         self.assertEqual(len(sample_file_df_columns), 4)
 
+    '''TODO'''
+    # We need to catch the error where not all the information is in the TSV file.
+
     def test_load_csv(self):
         ''' Tests that the handler will load the clean csv files correctly. '''
         self.csv_handler = DataHandler(collection_path=Path('mock_data_for_tests/data_handler/csv_files'),
@@ -69,8 +72,33 @@ class TestDataHandler(unittest.TestCase):
 
 class TestDataCleaner(unittest.TestCase):
     ''' Tests the DataCleaner class. '''
-    
-    
+
+    def setUp(self):
+        self.handler = DataHandler(collection_path=Path('mock_data_for_tests/data_cleaner'),
+                                   save_path=Path('This_is_a_mock_path')) # Add a save path to avoid 'warning' message.
+        self.cleaner = DataCleaner(handler=self.handler)
+
+    def test_remove_bad_reads_(self):
+        ''' Tests that sequences with errors are removed. '''
+        repertoire_dict = self.cleaner.collect_files()
+        removed_bad_reads = self.cleaner.remove_bad_reads(repertoire_dict)
+        self.assertEqual(len(removed_bad_reads), 2)
+        self.assertEqual(len(removed_bad_reads['contains_abnormal_reads']['AASeq']), 2)
+
+    @unittest.skip("Not implemented yet.")
+    def test_remove_bad_len(self):
+        ''' Tests that sequences that are below and above the biological threshold are removed. '''
+        repertoires = self.cleaner.collect_files()
+        # Test that the bad sequences have been removed.
+        # Test that the good sequences are still there.
+
+    @unittest.skip("Not implemented yet.")
+    def test_not_supported_disease(self):
+        ''' Tests that an error is raised if the disease is not supported (meaning the model has not been trained on the data). '''
+        pass
+
+
+
     
 # class TestDataCleanerRemoveBad(unittest.TestCase):
 #     ''' Tests the DataCleaner 'remove_bad_reads()' function. '''
