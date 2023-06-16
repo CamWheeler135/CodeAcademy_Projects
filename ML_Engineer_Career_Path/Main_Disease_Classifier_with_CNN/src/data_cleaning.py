@@ -28,7 +28,7 @@ class DataHandler():
         Collects the TCRDB data from the collection path file and returns a dictionary of the data.
         Assumes certain file properties:
         - The file is from the TCRdb.
-        - Project files are labelled with the prefix PRJ.
+        - Files are in the .tsv format.
         - File names contain the disease type. 
         Output {sample_name: pd.DataFrame}
         DataFrame columns (in order) = ['AASeq', 'Vregion', 'Dregion', 'Jregion']
@@ -42,14 +42,15 @@ class DataHandler():
         for sample in self.collection_path.iterdir():
             self.logger.debug(f"Loading {sample.name} into dictionary.")
 
-            # Complete project files do not have certain metadata.
+            # Handle ImmunoSeq and NCBI files differently.
             if 'PRJ' in sample.name:
                 repertoire_dict[sample.name] = pd.read_table(sample, header=0, 
-                                                        usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion'])
-            # Single files contain metadata, need to skip over. 
-            else:
-                repertoire_dict[sample.name] = pd.read_table(sample, header=1, 
-                                                        usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion'])
+                                                        usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion', 'cloneFraction'])
+            elif 'immunoSEQ' in sample.name:
+                repertoire_dict[sample.name] = pd.read_table(sample, header=0, 
+                                                usecols=['cdr3_amino_acid', 'v_gene', 'd_gene', 'j_gene', 'frequency']).rename(
+                                                columns={'cdr3_amino_acid':'AASeq', 'v_gene':'Vregion', 'd_gene':'Dregion', 
+                                                        'j_gene':'Jregion', 'frequency':'cloneFraction'})
 
         '''TODO'''
         # We need to catch an error here, if the correct columns are not found, then we need to know how to process them. 
@@ -83,9 +84,9 @@ class DataCleaner():
 
     # Class variables.
     number_of_data_files = 0
-    supported_disease_types = ['colorectal', 'hematological_cancer', 'breast',
-                    'lymphoblastic_leukemia', 'myeloid_leukemia', 'liver',
-                    'lung', 'glioblastoma', 'esophageal']
+    supported_disease_types = ['colorectal', 'breast', 'lymphoblastic_leukemia',
+                                'myeloid_leukemia', 'liver', 'lung', 'glioblastoma', 
+                                'esophageal']
     
     def __init__(self, handler: DataHandler):
         self.logger = logging.getLogger('Data Cleaner')
@@ -170,11 +171,11 @@ class DataCleaner():
         '''
         Iterates through the dataset and aggregates the CDR3 sequences from the sample cancers into one data-frame and saves them.
         The list of cancers that are supported are held in the class variable 'supported_disease_types'. 
-        The complete data frames are saved in the instances output_path.
+        The complete data frames are saved in the handlers output_path.
         '''
         self.logger.info("Creating final data frames.")
 
-        # Take each cancer type and make one large data frame containing the data. 
+        # Take each cancer type and make one large data frame containing the data.  
         for cancer_type in DataCleaner.supported_disease_types:
             self.logger.info(f"Building {cancer_type} data frame.")
             self.logger.debug(f"Handling {cancer_type} cancer files.")
