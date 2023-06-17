@@ -12,7 +12,10 @@ from src.errors import FileNotFoundError, DiseaseNotSupportedError
 
 class DataHandler():
     '''
-    Class will load and save the data into a dictionary for use in analysis.
+    This class is for handling files, primarily tasked with loading and saving.
+    - Will load in the raw data from the TCRDB and read it into a dictionary of data frames.
+    - Will load in cleaned data and read it into a dictionary of data frames. 
+    - Will save data as CSV files.
     '''
 
     # Function that loads each of the CSV files for analysis.
@@ -42,15 +45,12 @@ class DataHandler():
         for sample in self.collection_path.iterdir():
             self.logger.debug(f"Loading {sample.name} into dictionary.")
 
-            # Handle ImmunoSeq and NCBI files differently.
+            # Handle TCRDB project files.
             if 'PRJ' in sample.name:
                 repertoire_dict[sample.name] = pd.read_table(sample, header=0, 
                                                         usecols=['AASeq', 'Vregion', 'Dregion', 'Jregion', 'cloneFraction'])
-            elif 'immunoSEQ' in sample.name:
-                repertoire_dict[sample.name] = pd.read_table(sample, header=0, 
-                                                usecols=['cdr3_amino_acid', 'v_gene', 'd_gene', 'j_gene', 'frequency']).rename(
-                                                columns={'cdr3_amino_acid':'AASeq', 'v_gene':'Vregion', 'd_gene':'Dregion', 
-                                                        'j_gene':'Jregion', 'frequency':'cloneFraction'})
+            '''TODO'''
+            # Support for other file types will be added later.
 
         '''TODO'''
         # We need to catch an error here, if the correct columns are not found, then we need to know how to process them. 
@@ -71,7 +71,7 @@ class DataHandler():
     '''TODO'''
     # Add support for error handling when collecting and saving files. 
     # Such as creating directories if we need to, handling empty files etc. 
-    # This should help us take away the file handling from our classes that access and save data.
+
 
 
 class DataCleaner():
@@ -84,7 +84,7 @@ class DataCleaner():
 
     # Class variables.
     number_of_data_files = 0
-    supported_disease_types = ['colorectal', 'breast', 'lymphoblastic_leukemia',
+    supported_disease_types = ['breast', 'lymphoblastic_leukemia',
                                 'myeloid_leukemia', 'liver', 'lung', 'glioblastoma', 
                                 'esophageal']
     
@@ -102,7 +102,7 @@ class DataCleaner():
         ''' Collects the files from the data/raw_files directory using the DataHandler class. '''
         return self.handler.collect_raw_tcrdb_files()
     
-    def remove_bad_reads(self, dataset:dict, special_characters:list=None) -> dict:
+    def remove_special_characters(self, dataset:dict, special_characters:list=None) -> dict:
         ''' 
         Remove sequences that contain non-alphabetical characters.
         All sequences from the TCRdb have been cleaned, but this function will be helpful with raw sequences being added to the project. 
@@ -137,14 +137,13 @@ class DataCleaner():
         - Short <= 10 
         - Long >= 24
         Reference: 
-        Beshnova D, Ye J, Onabolu O, Moon B, Zheng W, Fu YX, Brugarolas J, Lea J, Li B. 
+        Beshnova D, et al.
         De novo prediction of cancer-associated T cell receptors for noninvasive cancer detection. 
         '''
         self.logger.info("Searching for sequences that are outside of min/max range.")
 
         files = dataset.keys()
         for file in files:
-            self.logger.debug(f"Handling {file}")
             self.logger.debug(f"The length of {file}'s data-frame before length removal = {len(dataset[file].index)}")
 
             # Strip the data of any possible whitespace.
@@ -152,10 +151,30 @@ class DataCleaner():
             # Remove sequences based on length parameters
             dataset[file] = dataset[file][(dataset[file]['AASeq'].str.len() >= self.min_seq_size) 
                                         & (dataset[file]['AASeq'].str.len() <= self.max_seq_size)]
-            
             self.logger.debug(f"The length of {file}'s data-frame after length removal = {len(dataset[file].index)}")
         
         return dataset 
+    
+
+    def remove_incomplete_seqs(self, dataset:dict) -> dict:
+        '''
+        Remove sequences that do not comply with IMGT standards.
+        - Do not start with cysteine C. 
+        - Do not end with phenylalanine F.
+        Reference: 
+        Xu, Ying et al. 
+        DeepLION: Deep Multi-Instance Learning Improves the Prediction of Cancer-Associated T Cell Receptors 
+        for Accurate Cancer Detection.
+        '''
+        self.logger.info("Searching for sequences that do not comply with IMGT standards.")
+
+        for repertoire in dataset.keys():
+            self.logger.debug(f"The length of the {repertoire} data-frame before IMGT removal = {len(dataset[repertoire].index)}")
+            dataset[repertoire] = dataset[repertoire][(dataset[repertoire]['AASeq'].str.startswith('C'))
+                                                      & (dataset[repertoire]['AASeq'].str.endswith('F'))]
+            self.logger.debug(f"The length of the {repertoire} data-frame after IMGT removal = {len(dataset[repertoire].index)}")
+
+        return dataset
     
     '''TODO'''
     # This appears to need some work, it seems a bit messy.
@@ -177,10 +196,10 @@ class DataCleaner():
 
         # Take each cancer type and make one large data frame containing the data.  
         for cancer_type in DataCleaner.supported_disease_types:
-            self.logger.info(f"Building {cancer_type} data frame.")
-            self.logger.debug(f"Handling {cancer_type} cancer files.")
+            self.logger.debug(f"Building {cancer_type} data frame.")
             cancer_type_files = [file for file in cleaned_data.keys() if cancer_type in file]
 
+            # This is shit.
             if len(cancer_type_files) == 0:
                 raise DiseaseNotSupportedError
             elif len(cancer_type_files) == 1:
@@ -196,10 +215,13 @@ class DataCleaner():
                 cancer_type_df.to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
         
+        self.logger.info("Final data frames saved.")
+        
     def complete_clean(self):
         ''' Performs a complete collection, cleaning and naming of dataset inside of input path. '''
         dataset = self.collect_files()
-        bad_reads_cleaned = self.remove_bad_reads(dataset)
+        bad_reads_cleaned = self.remove_special_characters(dataset)
         length_cleaned = self.assert_size(bad_reads_cleaned)
-        self.join_files(length_cleaned)
+        complete_seqs = self.remove_incomplete_seqs(length_cleaned)
+        self.join_files(complete_seqs)
         self.logger.info("Data cleaning complete.")
