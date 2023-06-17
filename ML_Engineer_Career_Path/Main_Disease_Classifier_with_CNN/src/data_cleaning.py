@@ -73,7 +73,6 @@ class DataHandler():
     # Such as creating directories if we need to, handling empty files etc. 
 
 
-
 class DataCleaner():
     '''
     This class is for cleaning and standardizing the data for use in the ML pipeline. 
@@ -154,7 +153,6 @@ class DataCleaner():
             self.logger.debug(f"The length of {file}'s data-frame after length removal = {len(dataset[file].index)}")
         
         return dataset 
-    
 
     def remove_incomplete_seqs(self, dataset:dict) -> dict:
         '''
@@ -172,14 +170,19 @@ class DataCleaner():
             self.logger.debug(f"The length of the {repertoire} data-frame before IMGT removal = {len(dataset[repertoire].index)}")
             dataset[repertoire] = dataset[repertoire][(dataset[repertoire]['AASeq'].str.startswith('C'))
                                                       & (dataset[repertoire]['AASeq'].str.endswith('F'))]
+            
+            self.logger.debug(dataset[repertoire].head())
             self.logger.debug(f"The length of the {repertoire} data-frame after IMGT removal = {len(dataset[repertoire].index)}")
 
         return dataset
-    
-    '''TODO'''
-    # This appears to need some work, it seems a bit messy.
-    # Need to clean up the way we name the files and save them. 
-    # This probs means that we look at the handler object.
+
+    def check_for_support(self, disease_to_check:str) -> bool:
+        ''' Checks if the disease is supported by the pipeline. If not, raise an error. '''
+
+        for disease in DataCleaner.supported_disease_types:
+            if disease in disease_to_check:
+                return True
+        raise DiseaseNotSupportedError
 
     def name_files(self, cancer_type:str):
         ''' Gives files appropriate names according to disease. '''
@@ -195,20 +198,21 @@ class DataCleaner():
         self.logger.info("Creating final data frames.")
 
         # Take each cancer type and make one large data frame containing the data.  
-        for cancer_type in DataCleaner.supported_disease_types:
+        for cancer_type in cleaned_data.keys():
+
+            # Check if the cancer type is supported by the pipeline.
+            self.check_for_support(cancer_type)
+
             self.logger.debug(f"Building {cancer_type} data frame.")
             cancer_type_files = [file for file in cleaned_data.keys() if cancer_type in file]
 
-            # This is shit.
-            if len(cancer_type_files) == 0:
-                raise DiseaseNotSupportedError
-            elif len(cancer_type_files) == 1:
+            if len(cancer_type_files) == 1:
                 save_path = self.name_files(cancer_type)
                 # Does not implement the handlers save function.
                 cleaned_data[cancer_type_files[0]].to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
             else:
-            # Create the data frame for that cancer type and append all the data.)
+                # Create the data frame for that cancer type and append all the data.
                 cancer_type_df = pd.concat([cleaned_data[file] for file in cancer_type_files], ignore_index=True)
                 save_path = self.name_files(cancer_type)
                 # Does not implement the handlers save function.
