@@ -177,13 +177,16 @@ class DataCleaner():
         return dataset
 
     def check_for_support(self, disease_to_check:str) -> bool:
-        ''' Checks if the disease is supported by the pipeline. If not, raise an error. '''
-
+        ''' 
+        Checks if the disease is supported by the pipeline. 
+        Returns the disease if it is supported.
+        If not, raise an error. 
+        '''
         for disease in DataCleaner.supported_disease_types:
             if disease in disease_to_check:
-                return True
+                return disease
         raise DiseaseNotSupportedError
-
+    
     def name_files(self, cancer_type:str):
         ''' Gives files appropriate names according to disease. '''
         return Path('data/cleaned_files/' + cancer_type + '.csv')
@@ -201,20 +204,25 @@ class DataCleaner():
         for cancer_type in cleaned_data.keys():
 
             # Check if the cancer type is supported by the pipeline.
-            self.check_for_support(cancer_type)
+            cancer_to_concat = self.check_for_support(cancer_type)
 
-            self.logger.debug(f"Building {cancer_type} data frame.")
-            cancer_type_files = [file for file in cleaned_data.keys() if cancer_type in file]
+            '''TODO'''
+            # Add support to catch error. 
+
+            self.logger.debug(f"Building {cancer_to_concat} data frame.")
+            cancer_type_files = [file for file in cleaned_data.keys() if cancer_to_concat in file]
+            self.logger.debug(f"Files to be joined: {cancer_type_files}")
 
             if len(cancer_type_files) == 1:
-                save_path = self.name_files(cancer_type)
+                save_path = self.name_files(cancer_to_concat)
+                single_file = cancer_type_files[0]
                 # Does not implement the handlers save function.
-                cleaned_data[cancer_type_files[0]].to_csv(save_path, index=False)
+                cleaned_data[single_file].to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
             else:
                 # Create the data frame for that cancer type and append all the data.
                 cancer_type_df = pd.concat([cleaned_data[file] for file in cancer_type_files], ignore_index=True)
-                save_path = self.name_files(cancer_type)
+                save_path = self.name_files(cancer_to_concat)
                 # Does not implement the handlers save function.
                 cancer_type_df.to_csv(save_path, index=False)
                 self.logger.debug(f"Saved {cancer_type} data frame to {save_path}.")
