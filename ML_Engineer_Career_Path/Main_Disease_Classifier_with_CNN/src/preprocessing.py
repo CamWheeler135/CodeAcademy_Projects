@@ -47,8 +47,8 @@ class KmerPreprocessor(BasePreprocessor):
     '''
 
     def __init__(
-            self, handler: DataHandler, subsample_size:int=1000, 
-            num_of_samples:int=50, kmer_size:int=2):
+            self, handler: DataHandler, subsample_size:int=100, 
+            num_of_samples:int=1000, kmer_size:int=2):
         
         self.logger = logging.getLogger('Unsupervised Preprocessor')
         self.subsample_size = subsample_size
@@ -69,7 +69,7 @@ class KmerPreprocessor(BasePreprocessor):
         Each sub-list contains the sequences sampled from the repertoire.
         '''
 
-        self.logger.info(f"Sub-sampling each repertoire into {self.num_of_samples} samples of size {self.subsample_size}.")
+        self.logger.info(f"Sub-sampling each repertoire into {self.num_of_samples} samples of size {self.subsample_size} seqs. ")
         repertoire_subsamples = {}
         for repertoire in data.keys():
             # Dictionary structure: {repertoire: [[subsample1], [subsample2], ...]}
@@ -89,7 +89,6 @@ class KmerPreprocessor(BasePreprocessor):
         Iterates through each sequence in the sub-sample, counting the number of kmers present.
         Returns a dictionary of the kmers and their counts.
         '''
-        self.logger.debug(f"Counting K-mers from subsamples, K-mer size is {self.kmer_size}")
         # Construct the kmer dictionary.
         kmer_vals = self.base_kmer_counter.copy()
         self.logger.debug(f"Kmer dictionary: {kmer_vals}")
@@ -115,7 +114,7 @@ class KmerPreprocessor(BasePreprocessor):
         # Count the kmers and add the target to each dict.
         kmer_list = []
         for repertoire in repertoire_subsamples.keys():
-            self.logger.info(f"Counting the kmers present in each {repertoire} sub-sample'")
+            self.logger.info(f"Counting the kmers of size {self.kmer_size} present in each {repertoire} sub-sample.'")
             for subsample in repertoire_subsamples[repertoire]:
                 subsample_kmers = self.count_kmers(subsample)
                 self.logger.debug(f"Kmer count for {subsample} is {subsample_kmers}")
@@ -156,17 +155,71 @@ class KmerPreprocessor(BasePreprocessor):
 
 class CNNPreprocessor(BasePreprocessor):
 
-    def __init__(self, handler: DataHandler):
+    def __init__(
+            self, handler: DataHandler, seqs_to_save:int=50000, 
+            subsample_size:int=100, num_of_samples:int=10000):
         self.logger = logging.getLogger('CNN Preprocessor')
+        self.handler = handler
+        self.seqs_to_save = seqs_to_save
+        self.subsample_size = subsample_size
+        self.num_of_samples = num_of_samples
+        self.encoding_matrix = None # Add the Beshova matrix here. 
 
     # Abstract method.
-    def sub_sample_repertoire(self):
+    def collect_repertoires(self):
+        return self.handler.collect_csv_files()
+
+    def save_top_n_seqs(self, data:dict) -> dict:
+        '''
+        Takes each repertoire, sorts the sequences by cloneFraction. 
+        Saves the top self.seqs_to_save amount of sequences. 
+        Reference:
+        Beshnova D, et al. De novo prediction of cancer-associated T cell receptors for noninvasive cancer detection. 
+        They implemented 40,000 seqs per class, I am using 50,000 as my default value. 
+        '''
+
+        self.logger.info(f"Saving the top {self.seqs_to_save} sequences per repertoire.")
+
+        for cancer_type, cancer_df in data.items():
+            # Sort by cloneFraction, take of top self.seqs_to_save sequences. 
+            data[cancer_type] = cancer_df.sort_values(by='cloneFraction', ascending=False).iloc[:self.seqs_to_save]
+        return data
+
+    # Abstract method.
+    def sub_sample_repertoire(self, data:dict) -> dict:
+        '''
+        Take each repertoire and subsample it self.subsample_size times.
+        Returns a dictionary of lists where each key is the disease name and each value is a list of lists.
+        Each sub-list contains the sequences sampled from the repertoire.
+        '''
+
+        self.logger.info(f"Sub-sampling each repertoire into {self.num_of_samples} samples of size {self.subsample_size} seqs.")
+        
+        # Collect the top self.seqs_to_save sequences per repertoire.
+        top_n_seq_repertoires = self.save_top_n_seqs(data)
+
+        # Iterate through the repertoires and subsample each one.
+        repertoire_subsamples = {}
+        for repertoire in top_n_seq_repertoires.keys():
+            # Dictionary structure: {repertoire: [[subsample1], [subsample2], ...]}
+            repertoire_subsamples[repertoire] = [top_n_seq_repertoires[repertoire]['AASeq'].sample(self.subsample_size, replace=True).to_list()
+                                                 for i in range(self.num_of_samples)]
+            self.logger.debug(f"The number of subsamples per reperotire = {len(repertoire_subsamples[repertoire])}")
+            self.logger.debug(f"The number of sequences in each subsample = {len(repertoire_subsamples[repertoire][0])}")
+
+        return repertoire_subsamples
+    
+    def encode_sequence(self):
         pass
-
+    
     # Abstract method.
-    def preprocess_data(self):
+    def create_targets(self):
         pass
 
     # Abstract method.
     def save_data(self):
+        pass 
+
+    # Abstract method.
+    def complete_preprocess(self):
         pass
