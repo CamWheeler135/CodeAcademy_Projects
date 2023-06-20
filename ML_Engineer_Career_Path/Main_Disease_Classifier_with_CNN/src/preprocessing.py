@@ -82,7 +82,7 @@ class KmerPreprocessor(BasePreprocessor):
     # Abstract method.
     def create_targets(self, data:dict) -> dict:
         ''' Creates a dictionary of the target values according to the dataset it has been given.'''
-        return {disease: value for value, disease in enumerate(data.keys())}
+        return {disease: value for value, disease in enumerate(sorted(data.keys()))} 
     
     def count_kmers(self, sequences:list) -> dict:
         '''
@@ -91,7 +91,6 @@ class KmerPreprocessor(BasePreprocessor):
         '''
         # Construct the kmer dictionary.
         kmer_vals = self.base_kmer_counter.copy()
-        self.logger.debug(f"Kmer dictionary: {kmer_vals}")
         # Iterate through the sequences in the subsample and increment the dictionary values.
         for sequence in sequences:
             kmer_iterator = nltk.ngrams(sequence, self.kmer_size)
@@ -110,6 +109,7 @@ class KmerPreprocessor(BasePreprocessor):
 
         # Create the targets.
         target_vals = self.create_targets(repertoire_subsamples)
+        self.logger.debug(f"Target values: {target_vals}")
 
         # Count the kmers and add the target to each dict.
         kmer_list = []
@@ -117,7 +117,6 @@ class KmerPreprocessor(BasePreprocessor):
             self.logger.info(f"Counting the kmers of size {self.kmer_size} present in each {repertoire} sub-sample.'")
             for subsample in repertoire_subsamples[repertoire]:
                 subsample_kmers = self.count_kmers(subsample)
-                self.logger.debug(f"Kmer count for {subsample} is {subsample_kmers}")
                 # Adds the target value to the dictionary of kmers.
                 subsample_kmers['target'] = target_vals[repertoire]
                 kmer_list.append(subsample_kmers)
@@ -212,6 +211,7 @@ class CNNPreprocessor(BasePreprocessor):
     def encode_sequence(self):
         pass
     
+
     # Abstract method.
     def create_targets(self):
         pass
