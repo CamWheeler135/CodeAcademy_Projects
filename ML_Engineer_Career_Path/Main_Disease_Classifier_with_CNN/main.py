@@ -5,7 +5,7 @@ import time
 # SRC Imports.
 from src.data_cleaning import DataCleaner, DataHandler
 from src.eda import ExploratoryAnalyzer, UnsupervisedVisualizer, Plotter
-from src.preprocessing import UnsupervisedPreprocessor
+from src.preprocessing import KmerPreprocessor
 
 def main():
     ## Data Cleaning. 
@@ -18,12 +18,11 @@ def main():
     eda = ExploratoryAnalyzer(eda_dh)
     eda.complete_eda()
 
-
     ## Unsupervised Preprocessing.
     usp_dh = DataHandler(
         collection_path=Path('data/cleaned_files'), 
         save_path=Path('data/processed_files/kmers/kmers.csv'))
-    usp = UnsupervisedPreprocessor(usp_dh)
+    usp = KmerPreprocessor(usp_dh, kmer_size=3)
     usp.complete_preprocess()
 
     ## PCA Analysis
