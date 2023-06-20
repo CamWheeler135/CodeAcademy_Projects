@@ -4,6 +4,7 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
@@ -130,7 +131,6 @@ class ExploratoryAnalyzer():
             # First column and '' at end of seq needs to be removed due to quirk in str.split method in pandas. 
             aa_breakdown = (data[repertoire]['AASeq'].str.split('', expand=True).iloc[:, 1:-1].replace({'': None}))
             self.aa_counts[repertoire] = {position : aa_breakdown[position].value_counts(normalize=True) for position in aa_breakdown.columns}
-            self.logger.debug(self.aa_counts[repertoire])
     
     def complete_eda(self):
         ''' Performs the complete EDA. '''
@@ -334,6 +334,10 @@ class Plotter():
             ax.flat[i].set_title(f"{keys[i]} Amino Acid Distribution")
         fig.tight_layout(rect=[0, 0, .9, 1])
         plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
+
+    def make_pca_legend(self, data_dir:Path=Path('data/cleaned_files/')):
+        ''' Returns the sorted list of diseases to match the sorted targets created in the Kmer Preprocessor. '''
+        return {value : disease for value, disease in enumerate(sorted(os.listdir(data_dir)))}
     
     def plot_pca(self):
         ''' Plots a scatter graph of the pca data. '''
@@ -341,13 +345,14 @@ class Plotter():
         self.logger.info("Plotting PCA scatter plot.")
 
         # Data.
-        pca_x= self.unsupervised_vis.pca_data.iloc[:, 0]
-        pca_y = self.unsupervised_vis.pca_data.iloc[:, 1]
-        pca_targets = self.unsupervised_vis.pca_targets
+        categorical_labels = self.make_pca_legend()
+        # Map the numerical targets to their categorical values for the legend. 
+        pca_targets = self.unsupervised_vis.pca_targets.map(categorical_labels)
 
         # Plot.
         fig = plt.figure(figsize=(10, 10))
-        plt.scatter(pca_x, pca_y, c=pca_targets, alpha=0.3, cmap='tab10')
+        sns.scatterplot(data=self.unsupervised_vis.pca_data, x=0, 
+                        y=1, hue=pca_targets, palette='tab10', alpha=0.3)
         plt.title("PCA Scatter Plot")
         plt.xlabel("PCA 1")
         plt.ylabel("PCA 2")
