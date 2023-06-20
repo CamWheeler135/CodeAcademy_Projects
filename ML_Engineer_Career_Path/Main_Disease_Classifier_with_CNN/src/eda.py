@@ -207,6 +207,8 @@ class Plotter():
     def plot_sequence_count_bar(self):
         ''' Plots the number of sequences each cancer type contains. '''
 
+        self.logger.info("Plotting sequence count bar chart.")
+
         fig = plt.figure(figsize=(12,15))
         sns.barplot(x=list(self.eda.sequence_counts.keys()), y=list(self.eda.sequence_counts.values()))
         plt.xlabel("Cancer Types")
@@ -220,6 +222,8 @@ class Plotter():
 
     def plot_sequence_count_pie(self):
         '''Plots the proportion of each cancer type in the database'''
+
+        self.logger.info("Plotting sequence count pie chart.")
 
         # Data manipulation. 
         repertoire_seqs = list(self.eda.sequence_counts.values())
@@ -238,6 +242,8 @@ class Plotter():
 
     def plot_sequence_len_distribution(self):
         '''Plots the sequence length distribution of each repertoire.'''
+
+        self.logger.info("Plotting sequence length distribution.")
 
         # Data.
         mean = self.eda.seq_len_metrics['mean_len']
@@ -263,6 +269,8 @@ class Plotter():
     def plot_gene_usage(self):
         ''' Plots a heatmap of the gene permutations in each disease for V, D and J region '''
 
+        self.logger.info("Plotting gene usage heatmap.")
+
         # There are only 3 regions in analysis so hard coding the number of graphs should be okay. 
         # Collect the data for each of the heatmaps.
         vgene_df = pd.DataFrame(self.eda.gene_usage['Vregion']).fillna(0).transpose()
@@ -285,6 +293,8 @@ class Plotter():
         plt.savefig(Path(self.eda_save_path + 'Gene Usage Heatmaps'))
 
     def plot_jaccard_index(self):
+
+        self.logger.info("Plotting Jaccard Index Heatmap")
 
         # Data.
         repertoires = self.eda.jaccard_index.keys()
@@ -311,6 +321,8 @@ class Plotter():
     def plot_aa_distribtuion(self):
         ''' Plots the amino acid distribution for each repertoire in a heatmap. '''
 
+        self.logger.info("Plotting amino acid distribution heatmaps.")
+
         # Plot.
         keys = list(self.eda.aa_counts.keys())
         fig, ax = plt.subplots(3, 3, figsize=(30, 20), sharey='row')
@@ -326,6 +338,8 @@ class Plotter():
     def plot_pca(self):
         ''' Plots a scatter graph of the pca data. '''
 
+        self.logger.info("Plotting PCA scatter plot.")
+
         # Data.
         pca_x= self.unsupervised_vis.pca_data.iloc[:, 0]
         pca_y = self.unsupervised_vis.pca_data.iloc[:, 1]
@@ -333,7 +347,7 @@ class Plotter():
 
         # Plot.
         fig = plt.figure(figsize=(10, 10))
-        plt.scatter(pca_x, pca_y, c=pca_targets, cmap='tab10')
+        plt.scatter(pca_x, pca_y, c=pca_targets, alpha=0.3, cmap='tab10')
         plt.title("PCA Scatter Plot")
         plt.xlabel("PCA 1")
         plt.ylabel("PCA 2")
