@@ -59,14 +59,25 @@ class DataHandler():
         
         return repertoire_dict
 
-    def collect_csv_files(self) -> dict:
+    def collect_single_csv_file(self) -> pd.DataFrame:
+        ''' Collects a single file and returns it as a data frame.'''
+        return pd.read_csv(self.collection_path)
+
+    def collect_csv_files(self, multi:bool=True) -> dict:
         '''Collects the data from the collection path file and returns a dictionary of the data.'''
         # Returns the file name (stripping the csv tag) with a data frame of the sequences.
+        '''TODO'''
+        # Bug currently does not remove teh CSV from the file name.
         return {os.path.splitext(file.name)[0]: pd.read_csv(file) for file in self.collection_path.iterdir()}
-    
+
     def save_as_csv(self, data:pd.DataFrame):
         ''' Saves the data as a csv file. '''
         data.to_csv(self.save_path, index=False)
+    
+    def save_multi_as_csv(self, data:dict):
+        ''' Iterates through a dictionary and saves the data as a csv. '''
+        for file_name, data_df in data.items():
+            data_df.to_csv(self.save_path / f'{file_name}.csv', index=False)
 
     '''TODO'''
     # Add support for error handling when collecting and saving files. 

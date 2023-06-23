@@ -218,8 +218,10 @@ class CNNPreprocessor(BasePreprocessor):
 
     # Abstract method.
     def save_data(self):
-        pass 
+        self.handler.save_as_csv()
 
     # Abstract method.
     def complete_preprocess(self):
-        pass
+        repertoires = self.collect_repertoires()
+        top_n_seq_repertoires = self.save_top_n_seqs(repertoires)
+        self.handler.save_multi_as_csv(top_n_seq_repertoires)

@@ -157,9 +157,9 @@ class UnsupervisedVisualizer():
         self.pca_targets = None
 
     def collect_kmer_dataset(self):
-        return self.handler.collect_csv_files()
+        return self.handler.collect_single_csv_file()
 
-    def perform_pca(self, data:dict):
+    def perform_pca(self, kmer_dataset:pd.DataFrame):
         ''' Performs PCA analysis on the data. '''
 
         self.logger.info("Performing PCA Analysis.")
@@ -167,20 +167,17 @@ class UnsupervisedVisualizer():
         pca_pipeline = Pipeline([("scaler", StandardScaler()),
                                 ("pca", PCA(n_components=2))])
         
-        assert len(data.keys()) == 1 # Only one dataset should be present.
-        
-        for kmer_dataset in data.values():
-            X_train = kmer_dataset.drop(columns='target')
-            Y_train = kmer_dataset['target']
-            self.pca_data = pd.DataFrame(pca_pipeline.fit_transform(X_train))
-            self.pca_targets = Y_train
+        X_train = kmer_dataset.drop(columns='target')
+        Y_train = kmer_dataset['target']
+        self.pca_data = pd.DataFrame(pca_pipeline.fit_transform(X_train))
+        self.pca_targets = Y_train
         
     def save_pca_df(self):
         self.handler.save_as_csv(self.pca_data)
 
     def complete_pca_analysis(self):
-        repertoires = self.collect_kmer_dataset()
-        self.perform_pca(repertoires)
+        kmer_df = self.collect_kmer_dataset()
+        self.perform_pca(kmer_df)
         self.save_pca_df()
 
 
@@ -201,8 +198,8 @@ class Plotter():
         self.logger = logging.getLogger("Plotter")
         self.eda = eda
         self.unsupervised_vis = unsupervised_vis
-        self.eda_save_path = 'Figures/EDA/'
-        self.unsupervised_save_path = 'Figures/Unsupervised/'
+        self.eda_save_path = Path('Figures/EDA/')
+        self.unsupervised_save_path = Path('Figures/Unsupervised/')
     
     def plot_sequence_count_bar(self):
         ''' Plots the number of sequences each cancer type contains. '''
@@ -217,7 +214,7 @@ class Plotter():
         plt.yticks(fontsize=10)
         plt.ticklabel_format(style='plain', axis='y')
         plt.title("Comparison of Total Sequence Count per Cancer Type")
-        plt.savefig(Path(self.eda_save_path + 'Sequence_Counts'))
+        plt.savefig(self.eda_save_path / 'Sequence_Counts')
         self.logger.info("Sequence bar chart saved.")
 
     def plot_sequence_count_pie(self):
@@ -237,7 +234,7 @@ class Plotter():
         fig = plt.figure(figsize=(10,10))
         plt.pie(percent_of_database, labels=list(self.eda.sequence_counts.keys()), autopct='%1.1f%%')
         plt.title("Percentage of Cancer Type in Total Database.")
-        plt.savefig(Path(self.eda_save_path + 'Cancer_Type_Proportions'))
+        plt.savefig(self.eda_save_path / 'Cancer_Type_Proportions')
         self.logger.info("Database proportion pie chart saved.")
 
     def plot_sequence_len_distribution(self):
@@ -263,7 +260,7 @@ class Plotter():
         plt.ylabel("Proportion of Repertoire")
         plt.xlabel("Length of Sequence")
         plt.legend()
-        plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
+        plt.savefig(self.eda_save_path / 'Amino_Acid_Distributions')
         self.logger.info("Sequence length distribution chart saved.")
 
     def plot_gene_usage(self):
@@ -290,7 +287,7 @@ class Plotter():
         ax[2].set_title("Percentage J Gene Usage Between Diseases.")
         plt.xticks(fontsize=8, rotation=90)
         plt.yticks(fontsize=15)
-        plt.savefig(Path(self.eda_save_path + 'Gene Usage Heatmaps'))
+        plt.savefig(self.eda_save_path / 'Gene Usage Heatmaps')
 
     def plot_jaccard_index(self):
 
@@ -314,7 +311,7 @@ class Plotter():
 
         sns.heatmap(jaccard_df, vmin=0.001, vmax=0.2, mask=mask)
         plt.tight_layout()
-        plt.savefig(Path(self.eda_save_path + 'Jaccard_Heatmap'))
+        plt.savefig(self.eda_save_path / 'Jaccard_Heatmap')
 
 
     # Plot the amino acid distribution for each repertoire (heatmap).
@@ -333,13 +330,13 @@ class Plotter():
             sns.heatmap(data, vmax=0.4, cbar=i == 0, ax=ax.flat[i], cbar_ax=cbar_ax)
             ax.flat[i].set_title(f"{keys[i]} Amino Acid Distribution")
         fig.tight_layout(rect=[0, 0, .9, 1])
-        plt.savefig(Path(self.eda_save_path + 'Amino_Acid_Distributions'))
+        plt.savefig(self.eda_save_path / 'Amino_Acid_Distributions')
 
     def make_pca_legend(self, data_dir:Path=Path('data/cleaned_files/')):
         ''' Returns the sorted list of diseases to match the sorted targets created in the Kmer Preprocessor. '''
         return {value : disease for value, disease in enumerate(sorted(os.listdir(data_dir)))}
     
-    def plot_pca(self):
+    def plot_pca(self, figure_title:str="PCA_scatter_plot"):
         ''' Plots a scatter graph of the pca data. '''
 
         self.logger.info("Plotting PCA scatter plot.")
@@ -353,10 +350,10 @@ class Plotter():
         fig = plt.figure(figsize=(10, 10))
         sns.scatterplot(data=self.unsupervised_vis.pca_data, x=0, 
                         y=1, hue=pca_targets, palette='tab10', alpha=0.3)
-        plt.title("PCA Scatter Plot")
+        plt.title(figure_title)
         plt.xlabel("PCA 1")
         plt.ylabel("PCA 2")
-        plt.savefig(Path(self.unsupervised_save_path + 'PCA_Scatter_Plot'))
+        plt.savefig(self.unsupervised_save_path / f'{figure_title}.png')
 
     def complete_plots(self):
         ''' Runs all EDA and Unsupervised plots. '''
