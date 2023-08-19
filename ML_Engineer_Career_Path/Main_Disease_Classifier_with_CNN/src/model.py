@@ -1,4 +1,4 @@
-''' File that contains the CNNs for prediction of patient disease. '''
+''' File that contains the code for the CNNs for prediction of patient disease. '''
 
 import torch
 

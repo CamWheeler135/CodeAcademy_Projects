@@ -28,7 +28,7 @@ class ExploratoryAnalyzer():
         Amino acid positioning in each repertoire.
 
     Attributes:
-        logger: Logging instance for the class.
+        logger: Logger instance for the class.
         handler: DataHandler instance that handles collecting data from given directory.
         sequence_counts: A dictionary that contains the number of sequences found in each repertoire.
         seq_len_metrics: A dictionary that contains the number of times a sequence of length 'x' appears in the repertoire,
@@ -302,7 +302,7 @@ class UnsupervisedVisualizer():
     Plots are created using the 'Plotter' object. 
 
     Attributes:
-        logger: Logging instance for the class.
+        logger: Logger instance for the class.
         handler: DataHandler instance that handles collecting data from given directory.
         num_of_components: The number of components the PCA will reduce too (recommended 2D or 3D for plotting).
         pca_data: Set to none upon instantiation, will be replaced by a pd.DataFrame of PCA data once PCA has been performed.
@@ -391,6 +391,7 @@ class Plotter():
     '''
 
     def __init__(self,eda: ExploratoryAnalyzer, unsupervised_vis: UnsupervisedVisualizer):
+
         self.logger = logging.getLogger("Plotter")
         self.eda = eda
         self.unsupervised_vis = unsupervised_vis

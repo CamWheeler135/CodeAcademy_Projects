@@ -12,3 +12,12 @@ class DiseaseNotSupportedError(Exception):
 
     def __str__(self, cancer_type) -> str:
         return f"{cancer_type} cancer is not in the supported list, of cancer types. Check filename or file before continuing."
+    
+
+class DataNotFoundError(Exception):
+    """
+    This error is raised when the data needed for EDA cannot be found.
+    """
+
+    def __str__(self) -> str:
+        return f"The data needed for analysis are 'AASeq', 'Vregion', 'Dregion', 'Jregion', 'cloneFraction', please ensure they are all present."
