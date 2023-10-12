@@ -1,9 +1,0 @@
-.venv/
-.ipynb_checkpoints/
-**/__pycache__/
-logs.log
-data/
-Figures/
-Figures/Unpsupervised/
-TODO.md
-.DS_Store
