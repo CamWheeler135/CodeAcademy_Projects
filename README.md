@@ -10,4 +10,4 @@ Within each project, there will be a short README explaining some information on
 
 Codecademy also allows for *some* projects taken at the end of topics / modules (mini projects) to be done offline as well. You can find these in their respective career paths prefaced with 'Mini". 
 
-
+This is a test change.
